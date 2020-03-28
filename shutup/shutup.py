@@ -1,6 +1,7 @@
 import functools
 from typing import Callable, Optional
 
+import discord
 from discord import InvalidArgument, Message
 from discord.abc import Messageable
 from redbot.core import commands
@@ -70,7 +71,13 @@ class ShutUp(commands.Cog):
 
     @commands.command()
     async def shutup(self, ctx: commands.Context) -> None:
-        await ctx.send("K, I'll shut up forever. Sorry.")
+        if ctx.channel.permissions_for(ctx.me).add_reactions:
+            try:
+                await ctx.message.add_reaction("\N{ZIPPER-MOUTH FACE}")
+            except discord.HTTPException:
+                await ctx.send("K, I'll shut up forever. Sorry.")
+        else:
+            await ctx.send("K, I'll shut up forever. Sorry.")
         self._old_send = Messageable.send
         setattr(Messageable, "send", send)
 
