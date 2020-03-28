@@ -66,7 +66,10 @@ class RedHelper(commands.Cog):
             embed=discord.Embed(
                 title=f"Contributors to milestone {milestone}",
                 description=", ".join(
-                    map("[{0}](https://github.com/{0})".format, sorted(authors))
+                    map(
+                        "[{0}](https://github.com/{0})".format,
+                        sorted(authors, key=str.lower)
+                    )
                 ),
             )
         )
