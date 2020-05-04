@@ -19,7 +19,7 @@ async def send(self, content=None, *, tts=False, embed=None, file=None, files=No
     emoji = random.choice(OMEGA)
     if content:
         if len(content) > 1995:
-            await real_send(emoji)
+            await real_send(self, emoji)
         else:
             content = f"{emoji} {content} {emoji}"
     else:
