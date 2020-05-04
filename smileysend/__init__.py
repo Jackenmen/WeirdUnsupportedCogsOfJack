@@ -1,9 +1,9 @@
 from redbot.core.bot import Red
 
-from .shutup import ShutUp
+from .smileysend import SmileySend
 
 
 async def setup(bot: Red) -> None:
-    cog = ShutUp(bot)
+    cog = SmileySend(bot)
     bot.add_cog(cog)
     await cog.initialize()
