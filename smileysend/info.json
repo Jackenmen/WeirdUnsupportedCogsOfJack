@@ -1,0 +1,16 @@
+{
+    "name": "SmileySend",
+    "short": "Have you ever wanted your bot to smile in every message? Now it can!",
+    "description": "Have you ever wanted your bot to smile in every message? With this cog you can! It features with one command: `[p]smileysend` to make your bot send smiley in every message.",
+    "install_msg": "Thanks for installing SmileySend. If you were already crazy enough to add this repo, I can just wish you great fun!",
+    "author": [
+        "jack1142 (Jackenmen#6607)"
+    ],
+    "required_cogs": {},
+    "requirements": [],
+    "tags": [],
+    "min_bot_version": "3.3.7",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG"
+}
