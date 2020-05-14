@@ -14,26 +14,70 @@ OMEGA = (
 )
 
 
-@functools.wraps(real_send)
-async def send(self, content=None, *, tts=False, embed=None, file=None, files=None, delete_after=None, nonce=None):
-    emoji = random.choice(OMEGA)
-    if content:
-        if len(content) > 1995:
-            await real_send(self, emoji)
-        else:
-            content = f"{emoji} {content} {emoji}"
-    else:
-        content = emoji
-    return await real_send(
+if discord.version_info[:2] >= (1, 4):
+    @functools.wraps(real_send)
+    async def send(
         self,
-        content,
-        tts=tts,
-        embed=embed,
-        file=file,
-        files=files,
-        delete_after=delete_after,
-        nonce=nonce,
-    )
+        content=None,
+        *,
+        tts=False,
+        embed=None,
+        file=None,
+        files=None,
+        delete_after=None,
+        nonce=None,
+        allowed_mentions=None,
+    ):
+        emoji = random.choice(OMEGA)
+        if content:
+            if len(content) > 1995:
+                await real_send(self, emoji)
+            else:
+                content = f"{emoji} {content} {emoji}"
+        else:
+            content = emoji
+        return await real_send(
+            self,
+            content,
+            tts=tts,
+            embed=embed,
+            file=file,
+            files=files,
+            delete_after=delete_after,
+            nonce=nonce,
+            allowed_mentions=allowed_mentions,
+        )
+else:
+    @functools.wraps(real_send)
+    async def send(
+        self,
+        content=None,
+        *,
+        tts=False,
+        embed=None,
+        file=None,
+        files=None,
+        delete_after=None,
+        nonce=None,
+    ):
+        emoji = random.choice(OMEGA)
+        if content:
+            if len(content) > 1995:
+                await real_send(self, emoji)
+            else:
+                content = f"{emoji} {content} {emoji}"
+        else:
+            content = emoji
+        return await real_send(
+            self,
+            content,
+            tts=tts,
+            embed=embed,
+            file=file,
+            files=files,
+            delete_after=delete_after,
+            nonce=nonce,
+        )
 
 
 class SmileySend(commands.Cog):
