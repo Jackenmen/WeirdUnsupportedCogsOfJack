@@ -1,6 +1,7 @@
 import functools
 import random
 
+import discord
 from discord.abc import Messageable
 from redbot.core import commands
 from redbot.core.bot import Red
