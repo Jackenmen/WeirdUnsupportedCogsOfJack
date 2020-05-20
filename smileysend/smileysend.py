@@ -183,7 +183,7 @@ class SmileySend(commands.Cog):
         await self.config.toggle.set(toggle)
         await ctx.tick()
 
-    @commands.command(name="interactive")
+    @smileysend.command(name="interactive")
     async def smileysend_interactive(self, ctx: commands.Context, toggle: bool) -> None:
         if toggle:
             setattr(Context, "send_interactive", send_interactive)
