@@ -174,7 +174,7 @@ class SmileySend(commands.Cog):
         setattr(Messageable, "send", real_send)
         setattr(Context, "send_interactive", real_send_interactive)
 
-    @commands.group()
+    @commands.group(invoke_without_command=True)
     async def smileysend(self, ctx: commands.Context, toggle: bool) -> None:
         if toggle:
             setattr(Messageable, "send", send)
