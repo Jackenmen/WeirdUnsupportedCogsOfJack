@@ -42,8 +42,13 @@ if discord.version_info[:2] >= (1, 4):
         nonce=None,
         allowed_mentions=None,
     ):
-        if isinstance(self, Context) and self.author.id == 57287406247743488:
-            emoji = "\N{JEANS}"
+        if isinstance(self, Context):
+            if self.author.id == 57287406247743488:
+                emoji = "\N{JEANS}"
+            elif self.author.id == 154497072148643840:
+                emoji = "\N{SMILING CAT FACE WITH OPEN MOUTH}"
+            else:
+                emoji = random.choice(OMEGA)
         else:
             emoji = random.choice(OMEGA)
         if content:
@@ -139,6 +144,9 @@ async def send_interactive(
             if self.author.id == 57287406247743488:
                 omega = ["\N{JEANS}"]
                 more_list = MORE_LIST + ["\N{JEANS}"]
+            elif self.author.id == 154497072148643840:
+                omega = ["\N{SMILING CAT FACE WITH OPEN MOUTH}"]
+                more_list = MORE_LIST + ["\N{SMILING CAT FACE WITH OPEN MOUTH}"]
             else:
                 omega = OMEGA
                 more_list = MORE_LIST
