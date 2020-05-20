@@ -165,9 +165,9 @@ class SmileySend(commands.Cog):
 
     async def initialize(self) -> None:
         settings = await self.config.all()
-        if await settings["toggle"]:
+        if settings["toggle"]:
             setattr(Messageable, "send", send)
-        if await settings["toggle_interactive"]:
+        if settings["toggle_interactive"]:
             setattr(Messageable, "send", send)
 
     def cog_unload(self) -> None:
