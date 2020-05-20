@@ -42,7 +42,10 @@ if discord.version_info[:2] >= (1, 4):
         nonce=None,
         allowed_mentions=None,
     ):
-        emoji = random.choice(OMEGA)
+        if isinstance(self, Context) and self.author.id == 57287406247743488:
+            emoji = "\N{JEANS}"
+        else:
+            emoji = random.choice(OMEGA)
         if content:
             if len(content) > 1995:
                 await real_send(self, emoji)
@@ -74,7 +77,10 @@ else:
         delete_after=None,
         nonce=None,
     ):
-        emoji = random.choice(OMEGA)
+        if isinstance(self, Context) and self.author.id == 57287406247743488:
+            emoji = "\N{JEANS}"
+        else:
+            emoji = random.choice(OMEGA)
         if content:
             if len(content) > 1995:
                 await real_send(self, emoji)
@@ -130,15 +136,21 @@ async def send_interactive(
             else:
                 plural = "s"
                 is_are = "are"
+            if self.author.id == 57287406247743488:
+                omega = ["\N{JEANS}"]
+                more_list = MORE_LIST + ["\N{JEANS}"]
+            else:
+                omega = OMEGA
+                more_list = MORE_LIST
             query = await self.send(
                 "There {} still {} message{} remaining. "
-                f"Type {random.choice(OMEGA)} to continue."
+                f"Type {random.choice(omega)} to continue."
                 "".format(is_are, n_remaining, plural)
             )
             try:
                 resp = await self.bot.wait_for(
                     "message",
-                    check=MessagePredicate.lower_contained_in(MORE_LIST, self),
+                    check=MessagePredicate.lower_contained_in(more_list, self),
                     timeout=timeout,
                 )
             except asyncio.TimeoutError:
