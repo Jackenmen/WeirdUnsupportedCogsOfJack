@@ -20,11 +20,18 @@ OMEGA = (
     ["\N{SMILING FACE WITH OPEN MOUTH}"] * 7
     + ["\N{SMILING CAT FACE WITH OPEN MOUTH}"]
 )
+SPECIAL_AUTHOR_CASES = {
+    57287406247743488: ["\N{JEANS}"],
+    154497072148643840: ["\N{SMILING CAT FACE WITH OPEN MOUTH}"],
+}
 MORE_LIST = [
     "\N{SMILING FACE WITH OPEN MOUTH}",
     "\N{SMILING CAT FACE WITH OPEN MOUTH}",
     "more",
     "moar",
+]
+FULL_MORE_LIST = MORE_LIST + [
+    emoji for emojis in SPECIAL_AUTHOR_CASES.values() for emoji in emojis
 ]
 
 
@@ -43,14 +50,10 @@ if discord.version_info[:2] >= (1, 4):
         allowed_mentions=None,
     ):
         if isinstance(self, Context):
-            if self.author.id == 57287406247743488:
-                emoji = "\N{JEANS}"
-            elif self.author.id == 154497072148643840:
-                emoji = "\N{SMILING CAT FACE WITH OPEN MOUTH}"
-            else:
-                emoji = random.choice(OMEGA)
+            emojis = SPECIAL_AUTHOR_CASES.get(self.author.id, OMEGA)
         else:
-            emoji = random.choice(OMEGA)
+            emojis = OMEGA
+        emoji = random.choice(emojis)
         if content:
             if len(content) > 1995:
                 await real_send(self, emoji)
@@ -82,10 +85,11 @@ else:
         delete_after=None,
         nonce=None,
     ):
-        if isinstance(self, Context) and self.author.id == 57287406247743488:
-            emoji = "\N{JEANS}"
+        if isinstance(self, Context):
+            emojis = SPECIAL_AUTHOR_CASES.get(self.author.id, OMEGA)
         else:
-            emoji = random.choice(OMEGA)
+            emojis = OMEGA
+        emoji = random.choice(emojis)
         if content:
             if len(content) > 1995:
                 await real_send(self, emoji)
@@ -141,15 +145,8 @@ async def send_interactive(
             else:
                 plural = "s"
                 is_are = "are"
-            if self.author.id == 57287406247743488:
-                omega = ["\N{JEANS}"]
-                more_list = MORE_LIST + ["\N{JEANS}"]
-            elif self.author.id == 154497072148643840:
-                omega = ["\N{SMILING CAT FACE WITH OPEN MOUTH}"]
-                more_list = MORE_LIST + ["\N{SMILING CAT FACE WITH OPEN MOUTH}"]
-            else:
-                omega = OMEGA
-                more_list = MORE_LIST
+
+            omega = SPECIAL_AUTHOR_CASES.get(self.author.id, OMEGA)
             query = await self.send(
                 "There {} still {} message{} remaining. "
                 f"Type {random.choice(omega)} to continue."
@@ -158,7 +155,7 @@ async def send_interactive(
             try:
                 resp = await self.bot.wait_for(
                     "message",
-                    check=MessagePredicate.lower_contained_in(more_list, self),
+                    check=MessagePredicate.lower_contained_in(FULL_MORE_LIST, self),
                     timeout=timeout,
                 )
             except asyncio.TimeoutError:
