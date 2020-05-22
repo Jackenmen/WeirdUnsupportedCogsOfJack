@@ -185,7 +185,7 @@ class SmileySend(commands.Cog):
         if settings["toggle"]:
             setattr(Messageable, "send", send)
         if settings["toggle_interactive"]:
-            setattr(Messageable, "send_interactive", send_interactive)
+            setattr(Context, "send_interactive", send_interactive)
 
     def cog_unload(self) -> None:
         setattr(Messageable, "send", real_send)
