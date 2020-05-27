@@ -1,0 +1,21 @@
+{
+    "name": "SearchCommands",
+    "short": "SearchCommands allows you to easily find that stupid command that you can never remember name of.",
+    "description": "Did you ever wonder, where the fuck is that little slut command hiding? Now it's made easy with SearchCommands cog! Just run `[p]commandsearch`!",
+    "install_msg": "Thanks for installing SearchCommands. To find that little slut command you're looking for, use `[p]commandsearch` (after first loading this cog of course)",
+    "author": [
+        "jack1142 (Jackenmen#6607)"
+    ],
+    "required_cogs": {},
+    "requirements": [],
+    "tags": [
+        "commandsearch",
+        "searchcommands",
+        "tools",
+        "utility"
+    ],
+    "min_bot_version": "3.3.7",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG"
+}
