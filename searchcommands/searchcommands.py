@@ -25,7 +25,7 @@ class SearchCommands(commands.Cog):
             # who cares for blocking if this is unsupported
             cmd_list = [
                 {
-                    "name": cmd.name,
+                    "name": cmd.qualified_name,
                     "help": cmd.format_help_for_context(ctx),
                 }
                 for cmd in set(self.bot.walk_commands())
