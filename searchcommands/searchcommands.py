@@ -23,13 +23,13 @@ class SearchCommands(commands.Cog):
         """Slutty commands will never be able to hide from you again!"""
         async with ctx.typing():
             # who cares for blocking if this is unsupported
-            cmd_list = {
+            cmd_list = [
                 {
                     "name": cmd.name,
                     "help": cmd.format_help_for_context(ctx),
                 }
-                for cmd in self.bot.walk_commands()
-            }
+                for cmd in set(self.bot.walk_commands())
+            ]
             name_matches = fuzzywuzzy.process.extract(
                 {"name": query},
                 cmd_list,
