@@ -55,14 +55,16 @@ class SearchCommands(commands.Cog):
                 if use_embeds:
                     page = discord.Embed(title=cmd["name"], color=embed_color)
                     page.add_field(
-                        name="Help", value=cmd["help"][:1000], inline=False
+                        name="Command's help",
+                        value=cmd["help"][:1000] if cmd["help"] else "Unspecified",
+                        inline=False,
                     )
                 else:
                     page = (
                         f"```asciidoc\n"
                         f"= {cmd['name']} =\n"
-                        f"* Description:\n"
-                        f"  {cmd['help'][:1000]}\n"
+                        f"* Command's help:\n"
+                        f"  {cmd['help'][:1000] if cmd['help'] else 'Unspecified'}\n"
                         f"```"
                     )
                 pages.append(page)
