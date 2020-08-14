@@ -4,4 +4,6 @@ from .redhelper import RedHelper
 
 
 async def setup(bot: Red) -> None:
-    bot.add_cog(RedHelper(bot))
+    cog = RedHelper(bot)
+    bot.add_cog(cog)
+    cog.post_cog_add()

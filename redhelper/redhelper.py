@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 import aiohttp
 import discord
@@ -30,10 +31,16 @@ query getContributors($milestone: Int!, $after: String) {
 class RedHelper(commands.Cog):
     def __init__(self, bot: Red) -> None:
         self.bot = bot
+        self.session: aiohttp.ClientSession
+        self.ipc_task: asyncio.Task
+
+    def post_cog_add(self) -> None:
         self.session = aiohttp.ClientSession()
+        self.ipc_task = asyncio.create_task(self.ipc_server())
 
     def cog_unload(self) -> None:
         asyncio.create_task(self.session.close())
+        self.ipc_task.cancel()
 
     @commands.is_owner()
     @commands.command()
@@ -73,3 +80,21 @@ class RedHelper(commands.Cog):
                 ),
             )
         )
+
+    async def ipc_server(self) -> None:
+        # could use UNIX socket instead here
+        server = await asyncio.start_server(self.ipc_handler, "127.0.0.1", 8888)
+
+        async with server:
+            await server.serve_forever()
+
+    async def ipc_handler(
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+    ) -> None:
+        raw_data = await reader.read()
+        payload = json.loads(raw_data.decode())
+
+        # do something with the data here
+        print(payload)
+
+        writer.close()
