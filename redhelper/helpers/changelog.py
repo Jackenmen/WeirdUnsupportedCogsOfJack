@@ -1,16 +1,12 @@
-import asyncio
-
-import aiohttp
 import discord
 from redbot.core import commands
-from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import box
 
 from ..abc import MixinMeta
 
 
-GET_CONTRIBUTORS_QUERY = """
-query getContributors($milestone: Int!, $after: String) {
+GET_MILESTONE_CONTRIBUTORS_QUERY = """
+query getMilestoneContributors($milestone: Int!, $after: String) {
   repository(owner: "Cog-Creators", name: "Red-DiscordBot") {
     milestone(number: $milestone) {
       pullRequests(first: 100, after: $after) {
@@ -31,18 +27,6 @@ query getContributors($milestone: Int!, $after: String) {
 
 
 class ChangelogMixin(MixinMeta):
-    def __init__(self, bot: Red) -> None:
-        super().__init__(bot)
-        self.session: aiohttp.ClientSession
-
-    def post_cog_add(self) -> None:
-        super().post_cog_add()
-        self.session = aiohttp.ClientSession()
-
-    def cog_unload(self) -> None:
-        super().cog_unload()
-        asyncio.create_task(self.session.close())
-
     @commands.is_owner()
     @commands.command()
     async def getcontributors(self, ctx: commands.Context, milestone: int) -> None:
@@ -55,7 +39,7 @@ class ChangelogMixin(MixinMeta):
             async with self.session.post(
                 "https://api.github.com/graphql",
                 json={
-                    "query": GET_CONTRIBUTORS_QUERY,
+                    "query": GET_MILESTONE_CONTRIBUTORS_QUERY,
                     "variables": {
                         "milestone": milestone,
                         "after": after,

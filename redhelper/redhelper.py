@@ -1,3 +1,6 @@
+import asyncio
+
+import aiohttp
 from redbot.core import commands
 from redbot.core.bot import Red
 
@@ -11,3 +14,12 @@ class RedHelper(
     def __init__(self, bot: Red) -> None:
         super().__init__(bot)
         self.bot = bot
+        self.session = aiohttp.ClientSession()
+
+    def post_cog_add(self) -> None:
+        super().post_cog_add()
+        self.session = aiohttp.ClientSession()
+
+    def cog_unload(self) -> None:
+        super().cog_unload()
+        asyncio.create_task(self.session.close())

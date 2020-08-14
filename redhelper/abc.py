@@ -1,6 +1,7 @@
 from abc import ABC, ABCMeta, abstractmethod
 from typing import Any
 
+import aiohttp
 from discord.ext.commands import CogMeta
 from redbot.core.bot import Red
 
@@ -15,6 +16,7 @@ class CogAndABCMeta(CogMeta, ABCMeta):
 class MixinMeta(ABC):
     def __init__(self, *_args: Any) -> None:
         self.bot: Red
+        self.session: aiohttp.ClientSession
 
     @abstractmethod
     def cog_unload(self) -> None:
