@@ -1,4 +1,4 @@
-from abc import ABC, ABCMeta
+from abc import ABC, ABCMeta, abstractmethod
 from typing import Any
 
 from discord.ext.commands import CogMeta
@@ -15,6 +15,10 @@ class CogAndABCMeta(CogMeta, ABCMeta):
 class MixinMeta(ABC):
     def __init__(self, *_args: Any) -> None:
         self.bot: Red
+
+    @abstractmethod
+    async def cog_unload(self) -> None:
+        raise NotImplementedError()
 
     def post_cog_add(self) -> None:
         """This is ran after cog is added to the bot."""

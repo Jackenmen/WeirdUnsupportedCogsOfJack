@@ -2,8 +2,9 @@ import asyncio
 
 import aiohttp
 import discord
-from redbot.core.bot import Red
 from redbot.core import commands
+from redbot.core.bot import Red
+from redbot.core.utils.chat_formatting import box
 
 from ..abc import MixinMeta
 
@@ -69,14 +70,18 @@ class ChangelogMixin(MixinMeta):
                 page_info = pull_requests["pageInfo"]
                 after = page_info["endCursor"]
                 has_next_page = page_info["hasNextPage"]
-        await ctx.send(
-            embed=discord.Embed(
-                title=f"Contributors to milestone {milestone}",
-                description=", ".join(
-                    map(
-                        "[{0}](https://github.com/{0})".format,
-                        sorted(authors, key=str.lower)
-                    )
-                ),
-            )
+
+        sorted_authors = sorted(authors, key=str.lower)
+
+        embed = discord.Embed(
+            title=f"Contributors to milestone {milestone}",
+            description=", ".join(
+                map("[{0}](https://github.com/{0})".format, sorted_authors)
+            ),
         )
+        embed.add_field(
+            name="RST formatted list",
+            value=box(", ".join(map(":ghuser:`{}`".format, sorted_authors))),
+        )
+
+        await ctx.send(embed=embed)
