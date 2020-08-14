@@ -124,6 +124,10 @@ class NewContributorsMixin(MixinMeta):
 
         This command should only be ran once.
         """
+        async with ctx.typing():
+            await self._newcontributors_fetch(ctx)
+
+    async def _newcontributors_fetch(self, ctx: commands.Context) -> None:
         after = None
         has_next_page = True
         token = (await self.bot.get_shared_api_tokens("github")).get("token", "")
@@ -158,6 +162,8 @@ class NewContributorsMixin(MixinMeta):
 
         async with self.__config.pending_contributors() as pending_contributors:
             pending_contributors.update(new_pending_contributors)
+
+        await ctx.send("Finished.")
 
     @newcontributors.command(name="addoutput")
     async def newcontributors_addoutput(
