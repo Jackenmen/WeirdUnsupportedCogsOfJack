@@ -1,4 +1,4 @@
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, ABCMeta
 from typing import Any
 
 import aiohttp
@@ -18,9 +18,9 @@ class MixinMeta(ABC):
         self.bot: Red
         self.session: aiohttp.ClientSession
 
-    @abstractmethod
     def cog_unload(self) -> None:
-        raise NotImplementedError()
+        # this is here so that super calls work
+        pass
 
     def post_cog_add(self) -> None:
         """This is ran after cog is added to the bot."""
