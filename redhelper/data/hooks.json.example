@@ -1,0 +1,49 @@
+[
+  {
+    "id": "new_contributors",
+    "execute-command": "PATH_TO_PYTHON",
+    "pass-arguments-to-command": [
+      {
+        "source": "string",
+        "name": "PATH_TO_WEBHOOK_RECEIVER_SCRIPT"
+      },
+      {
+        "source": "entire-payload"
+      }
+    ],
+    "trigger-rule": {
+      "and": [
+        {
+          "match": {
+            "type": "value",
+            "value": "refs/heads/V3/develop",
+            "parameter": {
+              "source": "payload",
+              "name": "ref"
+            }
+          }
+        },
+        {
+          "match": {
+            "type": "value",
+            "value": "Cog-Creators/Red-DiscordBot",
+            "parameter": {
+              "source": "payload",
+              "name": "repository.full_name"
+            }
+          }
+        },
+        {
+          "match": {
+            "type": "payload-hash-sha1",
+            "secret": "SECRET_HERE",
+            "parameter": {
+              "source": "header",
+              "name": "X-Hub-Signature"
+            }
+          }
+        }
+      ]
+    }
+  }
+]

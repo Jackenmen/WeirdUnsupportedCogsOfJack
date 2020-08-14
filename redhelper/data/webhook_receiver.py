@@ -9,6 +9,7 @@ https://developer.github.com/webhooks/event-payloads/#push
 Note:
 This script does not handle webhook requests itself,
 it's up to server administrator to choose how to pass data to this script.
+I recommend using https://github.com/adnanh/webhook
 """
 
 import json
