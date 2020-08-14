@@ -16,9 +16,10 @@ import socket
 import sys
 
 
-def main():
+def main() -> int:
     if len(sys.argv) != 2:
         print("This script requires exactly one argument with JSON payload.")
+        return 1
 
     payload = json.loads(sys.argv[1])
     authors = {
@@ -30,6 +31,8 @@ def main():
         sock.connect(("127.0.0.1", 8888))
         sock.send(json.dumps(authors).encode())
 
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
