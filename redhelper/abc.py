@@ -17,7 +17,7 @@ class MixinMeta(ABC):
         self.bot: Red
 
     @abstractmethod
-    async def cog_unload(self) -> None:
+    def cog_unload(self) -> None:
         raise NotImplementedError()
 
     def post_cog_add(self) -> None:
