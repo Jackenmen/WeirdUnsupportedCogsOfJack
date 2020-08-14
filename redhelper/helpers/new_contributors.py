@@ -18,7 +18,7 @@ query getContributors($after: String) {
     defaultBranchRef {
       target {
         ... on Commit {
-          history(first: 100, before: $after) {
+          history(first: 100, after: $after) {
             nodes {
               author {
                 email
