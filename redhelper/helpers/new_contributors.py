@@ -262,6 +262,7 @@ class NewContributorsMixin(MixinMeta):
         pending_contributors = await self.__config.pending_contributors()
         new_added_contributors = {}
 
+        early_exit = False
         for username, author_data in pending_contributors.items():
             discord_user_id_line = (
                 f"**Discord user ID:** {discord_user_id}\n"
@@ -277,16 +278,15 @@ class NewContributorsMixin(MixinMeta):
                 " Type `exit` to finish, use `skip` to skip the contributor."
             )
 
-            while True:
+            while not early_exit:
                 user_msg = await self.bot.wait_for(
                     "message_without_command", check=MessagePredicate.same_context(ctx)
                 )
                 content = user_msg.content
 
                 if content == "exit":
-                    await safe_delete_message(bot_msg)
-                    await ctx.send("Finished early.")
-                    return
+                    early_exit = True
+                    continue
                 if content == "skip":
                     break
 
@@ -307,6 +307,10 @@ class NewContributorsMixin(MixinMeta):
                 author_data["discord_user_id"] = member.id
                 new_added_contributors[username] = author_data
                 break
+            else:
+                # early-exit by breaking out of for loop
+                await safe_delete_message(bot_msg)
+                break
 
             await safe_delete_message(bot_msg)
 
@@ -317,7 +321,7 @@ class NewContributorsMixin(MixinMeta):
         async with self.__config.added_contributors() as added_contributors:
             added_contributors.update(new_added_contributors)
 
-        await ctx.send("Finished.")
+        await ctx.send("Finished early." if early_exit else "Finished")
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
