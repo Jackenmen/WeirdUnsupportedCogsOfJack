@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 from typing import Dict, List
 
 import discord
@@ -20,11 +21,19 @@ query getContributors($after: String) {
         ... on Commit {
           history(first: 100, after: $after) {
             nodes {
+              commitUrl
               author {
                 email
                 name
                 user {
                   login
+                }
+              }
+              associatedPullRequests(first:1) {
+                nodes {
+                  author {
+                    login
+                  }
                 }
               }
             }
@@ -39,6 +48,8 @@ query getContributors($after: String) {
   }
 }
 """
+
+log = logging.getLogger("red.weirdjack.redhelper.helpers.newcontributors")
 
 
 class NewContributorsMixin(MixinMeta):
@@ -122,12 +133,13 @@ class NewContributorsMixin(MixinMeta):
     async def newcontributors_fetch(self, ctx: commands.Context) -> None:
         """Fetches all contributors and puts them in pending list.
 
-        This command should only be ran once.
+        This command should only be ran on first setup.
         """
         async with ctx.typing():
             await self._newcontributors_fetch(ctx)
 
     async def _newcontributors_fetch(self, ctx: commands.Context) -> None:
+        prompt_to_check_logs = False
         after = None
         has_next_page = True
         token = (await self.bot.get_shared_api_tokens("github")).get("token", "")
@@ -146,7 +158,43 @@ class NewContributorsMixin(MixinMeta):
                 nodes = commits["nodes"]
                 for node in nodes:
                     author_data = node["author"]
-                    username = author_data["user"]["login"]
+                    if author_data["user"] is None:
+                        # the commit author doesn't have associated GH account
+                        # let's try to check associated PR
+                        try:
+                            associated_pr = node["associatedPullRequests"]["nodes"][0]
+                        except IndexError:
+                            # no associated PRs - either:
+                            # - commit wasn't made through PR
+                            # - or something weird is going on
+                            # let's just put it into logs
+                            log.error(
+                                "Failed to find GitHub username of commit author.\n"
+                                "Commit author: %s <%s>\n"
+                                "Commit URL: %s",
+                                author_data["name"],
+                                author_data["email"],
+                                node["commitUrl"],
+                            )
+                            prompt_to_check_logs = True
+                            continue
+                        try:
+                            username = associated_pr["author"]["login"]
+                        except KeyError:
+                            # author of PR has deleted his GH account
+                            log.error(
+                                "Failed to find GitHub username of commit author"
+                                " through associated PR.\n"
+                                "Commit author: %s <%s>\n"
+                                "Commit URL: %s",
+                                author_data["name"],
+                                author_data["email"],
+                                node["commitUrl"],
+                            )
+                            prompt_to_check_logs = True
+                            continue
+                    else:
+                        username = author_data["user"]["login"]
                     if (
                         username not in new_pending_contributors
                         and username not in added_contributors
@@ -163,7 +211,12 @@ class NewContributorsMixin(MixinMeta):
         async with self.__config.pending_contributors() as pending_contributors:
             pending_contributors.update(new_pending_contributors)
 
-        await ctx.send("Finished.")
+        msg = "Finished"
+        if prompt_to_check_logs:
+            msg += (
+                " There have been some issues, please check logs for more information."
+            )
+        await ctx.send(msg)
 
     @newcontributors.command(name="addoutput")
     async def newcontributors_addoutput(
