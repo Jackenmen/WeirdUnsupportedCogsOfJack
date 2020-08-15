@@ -1,7 +1,7 @@
 import asyncio
 import json
 import logging
-from typing import Dict, List
+from typing import Dict
 
 import discord
 from discord.ext.commands.view import StringView  # DEP-WARN
@@ -11,6 +11,7 @@ from redbot.core.config import Config
 from redbot.core.utils.predicates import MessagePredicate
 
 from ..abc import MixinMeta
+from ..discord_utils import safe_delete_message
 
 
 GET_CONTRIBUTORS_QUERY = """
@@ -283,7 +284,7 @@ class NewContributorsMixin(MixinMeta):
                 content = user_msg.content
 
                 if content == "exit":
-                    await bot_msg.delete()
+                    await safe_delete_message(bot_msg)
                     await ctx.send("Finished early.")
                     return
                 if content == "skip":
@@ -307,7 +308,7 @@ class NewContributorsMixin(MixinMeta):
                 new_added_contributors[username] = author_data
                 break
 
-            await bot_msg.delete()
+            await safe_delete_message(bot_msg)
 
         async with self.__config.pending_contributors() as pending_contributors:
             for username in new_added_contributors:
