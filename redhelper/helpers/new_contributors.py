@@ -102,17 +102,24 @@ class NewContributorsMixin(MixinMeta):
 
         writer.close()
 
+        await self.new_pending_contributors_notify(new_pending_contributors)
+
     async def new_pending_contributors_notify(
-        self, new_pending_contributors: List[Dict[str, str]]
+        self, new_pending_contributors: Dict[str, Dict[str, str]]
     ) -> None:
-        for new_contributor in new_pending_contributors:
-            username = new_contributor["username"]
-            commit_author_name = new_contributor["name"]
+        for username, author_data in new_pending_contributors.items():
+            commit_author_name = author_data["name"]
+            discord_user_id_line = (
+                f"\n**Discord user ID:** {discord_user_id}"
+                if (discord_user_id := author_data.get('discord_user_id')) is not None
+                else ""
+            )
             embed = discord.Embed(
                 title="New pending contributor!",
                 description=(
-                    f"GitHub: [@{username}](https://github.com/{username})\n"
-                    f"Commit author name: {commit_author_name}"
+                    f"**GitHub:** [@{username}](https://github.com/{username})\n"
+                    f"**Commit author name:** {commit_author_name}"
+                    f"{discord_user_id_line}"
                 ),
             )
             output_channels = [
@@ -318,8 +325,12 @@ class NewContributorsMixin(MixinMeta):
             ) is None:
                 return
 
-            async with self.__config.added_contributors() as added_contributors:
-                added_contributors[contributor_data["username"]] = contributor_data
+            new_pending_contributors = {contributor_data["username"]: contributor_data}
+
+            async with self.__config.pending_contributors() as pending_contributors:
+                pending_contributors.update(new_pending_contributors)
+
+        await self.new_pending_contributors_notify(new_pending_contributors)
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member) -> None:
