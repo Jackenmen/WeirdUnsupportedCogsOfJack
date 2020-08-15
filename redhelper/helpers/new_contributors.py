@@ -229,10 +229,32 @@ class NewContributorsMixin(MixinMeta):
             )
         await ctx.send(msg)
 
+    @newcontributors.command(name="listpending")
+    async def listpending(
+        self, ctx: commands.Context, show_emails: bool = False
+    ) -> None:
+        """List pending contributors."""
+        pending_contributors = await self.__config.pending_contributors()
+        if show_emails:
+            description = "\n".join(
+                f"[@{c['username']}](https://github.com/{c['username']})"
+                f" (Commit author name: {c['name']} <{c['email']}>)"
+                for c in pending_contributors
+            )
+        else:
+            description = "\n".join(
+                f"[@{c['username']}](https://github.com/{c['username']})"
+                f" (Commit author name: {c['name']})"
+                for c in pending_contributors
+            )
+        # this could fail, but 2048 characters is a lot
+        await ctx.send(embed=discord.Embed(description=description))
+
     @newcontributors.command(name="addcontributor")
     async def newcontributors_addcontributor(
         self, ctx: commands.Context, username: str, member: discord.Member
     ):
+        """Add single contributor by username."""
         async with self.__config.pending_contributors() as pending_contributors:
             if (author_data := pending_contributors.pop(username, None)) is None:
                 await ctx.send("Contributor with this username isn't in pending list.")
