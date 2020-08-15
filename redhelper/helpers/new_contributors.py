@@ -99,7 +99,10 @@ class NewContributorsMixin(MixinMeta):
                 new_pending_contributors[username] = author_data
 
         async with self.__config.pending_contributors() as pending_contributors:
-            pending_contributors.update(new_pending_contributors)
+            for username, author_data in dict(new_pending_contributors).items():
+                if username in pending_contributors:
+                    new_pending_contributors.pop(username, None)
+                pending_contributors[username] = author_data
 
         writer.close()
 
@@ -338,7 +341,10 @@ class NewContributorsMixin(MixinMeta):
             new_pending_contributors = {contributor_data["username"]: contributor_data}
 
             async with self.__config.pending_contributors() as pending_contributors:
-                pending_contributors.update(new_pending_contributors)
+                for username, author_data in dict(new_pending_contributors).items():
+                    if username in pending_contributors:
+                        new_pending_contributors.pop(username, None)
+                    pending_contributors[username] = author_data
 
         await self.new_pending_contributors_notify(new_pending_contributors)
 
