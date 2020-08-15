@@ -236,18 +236,34 @@ class NewContributorsMixin(MixinMeta):
     ) -> None:
         """List pending contributors."""
         pending_contributors = await self.__config.pending_contributors()
-        if show_emails:
-            text = "\n".join(
-                f"@{username} (Git name: {c['name']} <{c['email']}>)"
-                for username, c in pending_contributors.items()
-            )
+        if await ctx.embed_requested():
+            if show_emails:
+                description = "\n".join(
+                    f"[@{username}](https://github.com/{username})"
+                    f" (Git name: {c['name']} <{c['email']}>)"
+                    for username, c in pending_contributors.items()
+                )
+            else:
+                description = "\n".join(
+                    f"[@{username}](https://github.com/{username})"
+                    f" (Git name: {c['name']})"
+                    for username, c in pending_contributors.items()
+                )
+            for page in pagify(description):
+                await ctx.send(embed=discord.Embed(description=description))
         else:
-            text = "\n".join(
-                f"@{username} (Git name: {c['name']})"
-                for username, c in pending_contributors.items()
-            )
-        for page in pagify(text):
-            await ctx.send(text)
+            if show_emails:
+                text = "\n".join(
+                    f"@{username} (Git name: {c['name']} <{c['email']}>)"
+                    for username, c in pending_contributors.items()
+                )
+            else:
+                text = "\n".join(
+                    f"@{username} (Git name: {c['name']})"
+                    for username, c in pending_contributors.items()
+                )
+            for page in pagify(text):
+                await ctx.send(text)
 
     @newcontributors.command(name="addcontributor")
     async def newcontributors_addcontributor(
