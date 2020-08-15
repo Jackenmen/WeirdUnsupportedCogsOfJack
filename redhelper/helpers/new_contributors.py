@@ -314,6 +314,8 @@ class NewContributorsMixin(MixinMeta):
             async with self.__config.leftguild_contributors() as leftguild_contributors:
                 leftguild_contributors[username] = author_data
 
+        await ctx.send("Contributor hack-added.")
+
     @newcontributors.command(name="ignorecontributor")
     async def newcontributors_ignorecontributor(
         self, ctx: GuildContext, username: str
