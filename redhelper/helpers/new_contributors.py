@@ -295,7 +295,7 @@ class NewContributorsMixin(MixinMeta):
                     content = view.get_quoted_word()
 
                 try:
-                    member = await member_converter.convert(content)
+                    member = await member_converter.convert(ctx, content)
                 except commands.BadArgument as e:
                     await ctx.send(
                         f"{e}. Please try passing user ID"
