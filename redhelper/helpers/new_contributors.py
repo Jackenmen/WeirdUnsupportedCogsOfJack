@@ -237,15 +237,15 @@ class NewContributorsMixin(MixinMeta):
         pending_contributors = await self.__config.pending_contributors()
         if show_emails:
             description = "\n".join(
-                f"[@{c['username']}](https://github.com/{c['username']})"
+                f"[@{username}](https://github.com/{username})"
                 f" (Commit author name: {c['name']} <{c['email']}>)"
-                for c in pending_contributors
+                for username, c in pending_contributors.items()
             )
         else:
             description = "\n".join(
-                f"[@{c['username']}](https://github.com/{c['username']})"
+                f"[@{username}](https://github.com/{username})"
                 f" (Commit author name: {c['name']})"
-                for c in pending_contributors
+                for username, c in pending_contributors.items()
             )
         # this could fail, but 2048 characters is a lot
         await ctx.send(embed=discord.Embed(description=description))
