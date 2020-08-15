@@ -8,6 +8,7 @@ from discord.ext.commands.view import StringView  # DEP-WARN
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
+from redbot.core.utils.chat_formatting import pagify
 from redbot.core.utils.predicates import MessagePredicate
 
 from ..abc import MixinMeta
@@ -236,19 +237,17 @@ class NewContributorsMixin(MixinMeta):
         """List pending contributors."""
         pending_contributors = await self.__config.pending_contributors()
         if show_emails:
-            description = "\n".join(
-                f"[@{username}](https://github.com/{username})"
-                f" (Commit author name: {c['name']} <{c['email']}>)"
+            text = "\n".join(
+                f"@{username} (Git name: {c['name']} <{c['email']}>)"
                 for username, c in pending_contributors.items()
             )
         else:
-            description = "\n".join(
-                f"[@{username}](https://github.com/{username})"
-                f" (Commit author name: {c['name']})"
+            text = "\n".join(
+                f"@{username} (Git name: {c['name']})"
                 for username, c in pending_contributors.items()
             )
-        # this could fail, but 2048 characters is a lot
-        await ctx.send(embed=discord.Embed(description=description))
+        for page in pagify(text):
+            await ctx.send(text)
 
     @newcontributors.command(name="addcontributor")
     async def newcontributors_addcontributor(
