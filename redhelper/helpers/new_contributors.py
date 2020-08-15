@@ -7,8 +7,9 @@ import discord
 from discord.ext.commands.view import StringView  # DEP-WARN
 from redbot.core import commands
 from redbot.core.bot import Red
+from redbot.core.commands import GuildContext
 from redbot.core.config import Config
-from redbot.core.utils.chat_formatting import pagify
+from redbot.core.utils.chat_formatting import inline, pagify
 from redbot.core.utils.predicates import MessagePredicate
 
 from ..abc import MixinMeta
@@ -136,13 +137,14 @@ class NewContributorsMixin(MixinMeta):
                 await channel.send(embed=embed)
 
     @commands.is_owner()
+    @commands.guild_only()
     @commands.group()
-    async def newcontributors(self, ctx: commands.Context) -> None:
+    async def newcontributors(self, ctx: GuildContext) -> None:
         """New contributors utility commands."""
 
     @commands.max_concurrency(1)
     @newcontributors.command(name="fetch")
-    async def newcontributors_fetch(self, ctx: commands.Context) -> None:
+    async def newcontributors_fetch(self, ctx: GuildContext) -> None:
         """Fetches all contributors and puts them in pending list.
 
         This command should only be ran on first setup.
@@ -150,7 +152,7 @@ class NewContributorsMixin(MixinMeta):
         async with ctx.typing():
             await self._newcontributors_fetch(ctx)
 
-    async def _newcontributors_fetch(self, ctx: commands.Context) -> None:
+    async def _newcontributors_fetch(self, ctx: GuildContext) -> None:
         prompt_to_check_logs = False
         after = None
         has_next_page = True
@@ -232,7 +234,7 @@ class NewContributorsMixin(MixinMeta):
 
     @newcontributors.command(name="listpending")
     async def listpending(
-        self, ctx: commands.Context, show_emails: bool = False
+        self, ctx: GuildContext, show_emails: bool = False
     ) -> None:
         """List pending contributors."""
         pending_contributors = await self.__config.pending_contributors()
@@ -267,7 +269,7 @@ class NewContributorsMixin(MixinMeta):
 
     @newcontributors.command(name="addcontributor")
     async def newcontributors_addcontributor(
-        self, ctx: commands.Context, username: str, member: discord.Member
+        self, ctx: GuildContext, username: str, member: discord.Member
     ):
         """Add single contributor by username."""
         async with self.__config.pending_contributors() as pending_contributors:
@@ -285,9 +287,36 @@ class NewContributorsMixin(MixinMeta):
             f"`?assign {member.id} contributor`"
         )
 
+    @newcontributors.command(name="hackadd")
+    async def newcontributors_hackadd(
+        self, ctx: GuildContext, username: str, user_id: int
+    ):
+        if ctx.guild.get_member(user_id) is not None:
+            command = inline(f"{ctx.prefix}newcontributors addcontributor")
+            await ctx.send(
+                f"This user is in the server, please use {command} instead."
+            )
+            return
+
+        # yes, this has low ratelimit, but I don't care!
+        try:
+            user = await self.bot.fetch_user(user_id)
+        except discord.NotFound:
+            await ctx.send("User doesn't exist!")
+            return
+
+        async with self.__config.pending_contributors() as pending_contributors:
+            if (author_data := pending_contributors.pop(username, None)) is None:
+                await ctx.send("Contributor with this username isn't in pending list.")
+                return
+
+            author_data["discord_user_id"] = user.id
+            async with self.__config.leftguild_contributors() as leftguild_contributors:
+                leftguild_contributors[username] = author_data
+
     @newcontributors.command(name="ignorecontributor")
     async def newcontributors_ignorecontributor(
-        self, ctx: commands.Context, username: str
+        self, ctx: GuildContext, username: str
     ) -> None:
         """Ignore contributor by username. This should only be used for bot accounts."""
         async with self.__config.pending_contributors() as pending_contributors:
@@ -303,7 +332,7 @@ class NewContributorsMixin(MixinMeta):
 
     @newcontributors.command(name="unignorecontributor")
     async def newcontributor_unignorecontributor(
-        self, ctx: commands.Context, username: str
+        self, ctx: GuildContext, username: str
     ):
         async with self.__config.added_contributors() as added_contributors:
             if (author_data := added_contributors.pop(username, None)) is None:
@@ -321,7 +350,7 @@ class NewContributorsMixin(MixinMeta):
 
     @newcontributors.command(name="addoutput")
     async def newcontributors_addoutput(
-        self, ctx: commands.Context, channel: discord.TextChannel
+        self, ctx: GuildContext, channel: discord.TextChannel
     ) -> None:
         """Add output channel for new contributors notifications."""
         async with self.__config.output_channels() as output_channels:
@@ -333,7 +362,7 @@ class NewContributorsMixin(MixinMeta):
 
     @newcontributors.command(name="deleteoutput")
     async def newcontributors_deleteoutput(
-        self, ctx: commands.Context, channel: discord.TextChannel
+        self, ctx: GuildContext, channel: discord.TextChannel
     ) -> None:
         """Delete output channel for new contributors notifications."""
         async with self.__config.output_channels() as output_channels:
@@ -346,7 +375,7 @@ class NewContributorsMixin(MixinMeta):
 
     @commands.max_concurrency(1)
     @newcontributors.command(name="interactive")
-    async def newcontributors_interactive(self, ctx: commands.Context) -> None:
+    async def newcontributors_interactive(self, ctx: GuildContext) -> None:
         """Interactively add contributors.
 
         Integrates with Red.
