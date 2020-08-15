@@ -6,18 +6,21 @@ from ..abc import MixinMeta
 
 
 GET_MILESTONE_CONTRIBUTORS_QUERY = """
-query getMilestoneContributors($milestone: Int!, $after: String) {
+query getMilestoneContributors($milestone: String!, $after: String) {
   repository(owner: "Cog-Creators", name: "Red-DiscordBot") {
-    milestone(number: $milestone) {
-      pullRequests(first: 100, after: $after) {
-        nodes {
-          author {
-            login
+    milestones(first: 1, query: $milestone) {
+      nodes {
+        title
+        pullRequests(first: 100, after: $after) {
+          nodes {
+            author {
+              login
+            }
           }
-        }
-        pageInfo {
-          endCursor
-          hasNextPage
+          pageInfo {
+            endCursor
+            hasNextPage
+          }
         }
       }
     }
@@ -29,7 +32,7 @@ query getMilestoneContributors($milestone: Int!, $after: String) {
 class ChangelogMixin(MixinMeta):
     @commands.is_owner()
     @commands.command()
-    async def getcontributors(self, ctx: commands.Context, milestone: int) -> None:
+    async def getcontributors(self, ctx: commands.Context, milestone: str) -> None:
         """Get contributors for the given milestone in Red's repo."""
         after = None
         has_next_page = True
@@ -48,7 +51,12 @@ class ChangelogMixin(MixinMeta):
                 headers={"Authorization": f"Bearer {token}"}
             ) as resp:
                 json = await resp.json()
-                pull_requests = json["data"]["repository"]["milestone"]["pullRequests"]
+                try:
+                    milestone_data = json["data"]["repository"]["milestones"]["nodes"][0]
+                except IndexError:
+                    await ctx.send("Given milestone couldn't have been found.")
+                milestone_title = milestone_data["title"]
+                pull_requests = milestone_data["pullRequests"]
                 nodes = pull_requests["nodes"]
                 authors |= {node["author"]["login"] for node in nodes}
                 page_info = pull_requests["pageInfo"]
@@ -58,7 +66,7 @@ class ChangelogMixin(MixinMeta):
         sorted_authors = sorted(authors, key=str.lower)
 
         embed = discord.Embed(
-            title=f"Contributors to milestone {milestone}",
+            title=f"Contributors to milestone {milestone_title}",
             description=", ".join(
                 map("[{0}](https://github.com/{0})".format, sorted_authors)
             ),
