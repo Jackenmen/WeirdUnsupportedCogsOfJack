@@ -229,6 +229,25 @@ class NewContributorsMixin(MixinMeta):
             )
         await ctx.send(msg)
 
+    @newcontributors.command(name="")
+    async def newcontributors_addcontributor(
+        self, ctx: commands.Context, username: str, member: discord.Member
+    ):
+        async with self.__config.pending_contributors() as pending_contributors:
+            if (author_data := pending_contributors.pop(username, None)) is None:
+                await ctx.send("Contributor with this username isn't in pending list.")
+                return
+
+            author_data["discord_user_id"] = member.id
+            async with self.__config.added_contributors() as added_contributors:
+                added_contributors[username] = author_data
+
+        await ctx.send(
+            "Contributor added.\n"
+            "You can use this command to add role to that member:\n"
+            "`?assign {member.id} contributor`"
+        )
+
     @newcontributors.command(name="addoutput")
     async def newcontributors_addoutput(
         self, ctx: commands.Context, channel: discord.TextChannel
