@@ -305,6 +305,7 @@ class NewContributorsMixin(MixinMeta):
 
                 author_data["discord_user_id"] = member.id
                 new_added_contributors[username] = author_data
+                break
 
             await bot_msg.delete()
 
