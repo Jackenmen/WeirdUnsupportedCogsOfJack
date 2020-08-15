@@ -325,6 +325,10 @@ class NewContributorsMixin(MixinMeta):
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
+        if member.guild.id != 133049272517001216:  # Red - Discord Bot server
+            # Ignore other servers the bot is in
+            return
+
         async with self.__config.leftguild_contributors() as leftguild_contributors:
             if (
                 contributor_data := leftguild_contributors.pop(str(member.id), None)
@@ -340,6 +344,10 @@ class NewContributorsMixin(MixinMeta):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member) -> None:
+        if member.guild.id != 133049272517001216:  # Red - Discord Bot server
+            # Ignore other servers the bot is in
+            return
+
         async with self.__config.added_contributors() as added_contributors:
             if not added_contributors:
                 return
