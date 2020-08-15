@@ -229,7 +229,7 @@ class NewContributorsMixin(MixinMeta):
             )
         await ctx.send(msg)
 
-    @newcontributors.command(name="")
+    @newcontributors.command(name="addcontributor")
     async def newcontributors_addcontributor(
         self, ctx: commands.Context, username: str, member: discord.Member
     ):
