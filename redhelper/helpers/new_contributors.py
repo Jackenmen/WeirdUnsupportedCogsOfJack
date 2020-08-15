@@ -245,7 +245,7 @@ class NewContributorsMixin(MixinMeta):
         await ctx.send(
             "Contributor added.\n"
             "You can use this command to add role to that member:\n"
-            "`?assign {member.id} contributor`"
+            f"`?assign {member.id} contributor`"
         )
 
     @newcontributors.command(name="addoutput")
