@@ -285,6 +285,40 @@ class NewContributorsMixin(MixinMeta):
             f"`?assign {member.id} contributor`"
         )
 
+    @newcontributors.command(name="ignorecontributor")
+    async def newcontributors_ignorecontributor(
+        self, ctx: commands.Context, username: str
+    ) -> None:
+        """Ignore contributor by username. This should only be used for bot accounts."""
+        async with self.__config.pending_contributors() as pending_contributors:
+            if (author_data := pending_contributors.pop(username, None)) is None:
+                await ctx.send("Contributor with this username isn't in pending list.")
+                return
+
+            author_data["discord_user_id"] = None
+            async with self.__config.added_contributors() as added_contributors:
+                added_contributors[username] = author_data
+
+        await ctx.send("Contributor ignored.")
+
+    @newcontributors.command(name="unignorecontributor")
+    async def newcontributor_unignorecontributor(
+        self, ctx: commands.Context, username: str
+    ):
+        async with self.__config.added_contributors() as added_contributors:
+            if (author_data := added_contributors.pop(username, None)) is None:
+                await ctx.send("Contributor with this username isn't in the list.")
+                return
+
+            if author_data["discord_user_id"] is not None:
+                await ctx.send("Contributor with this username isn't ignored.")
+                return
+
+            async with self.__config.pending_contributors() as pending_contributors:
+                pending_contributors[username] = author_data
+
+        await ctx.send("Contributor unignored.")
+
     @newcontributors.command(name="addoutput")
     async def newcontributors_addoutput(
         self, ctx: commands.Context, channel: discord.TextChannel
@@ -415,7 +449,8 @@ class NewContributorsMixin(MixinMeta):
                 return
 
             for contributor_data in added_contributors.values():
-                if contributor_data["discord_user_id"] == member.id:
+                user_id = contributor_data["discord_user_id"]
+                if user_id is not None and user_id == member.id:
                     break
             else:
                 return
