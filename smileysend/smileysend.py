@@ -54,6 +54,7 @@ if discord.version_info[:2] >= (1, 4):
         else:
             emojis = OMEGA
         emoji = random.choice(emojis)
+        content = str(content) if content is not None else None
         if content:
             if len(content) > 1995:
                 await real_send(self, emoji)
