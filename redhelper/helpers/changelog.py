@@ -16,6 +16,7 @@ query getMilestoneContributors($milestone: String!, $after: String) {
             author {
               login
             }
+            merged
           }
           pageInfo {
             endCursor
@@ -31,8 +32,15 @@ query getMilestoneContributors($milestone: String!, $after: String) {
 
 class ChangelogMixin(MixinMeta):
     @commands.command()
-    async def getcontributors(self, ctx: commands.Context, milestone: str) -> None:
-        """Get contributors for the given milestone in Red's repo."""
+    async def getcontributors(
+        self, ctx: commands.Context, milestone: str, show_not_merged: bool = False
+    ) -> None:
+        """
+        Get contributors for the given milestone in Red's repo.
+
+        By default, this only shows PRs that have already been merged.
+        You can pass True to `<show_not_merged>` to show both merged and not merged PRs.
+        """
         after = None
         has_next_page = True
         authors = set()
@@ -57,7 +65,11 @@ class ChangelogMixin(MixinMeta):
                 milestone_title = milestone_data["title"]
                 pull_requests = milestone_data["pullRequests"]
                 nodes = pull_requests["nodes"]
-                authors |= {node["author"]["login"] for node in nodes}
+                authors |= {
+                    node["author"]["login"]
+                    for node in nodes
+                    if show_not_merged or node["merged"]
+                }
                 page_info = pull_requests["pageInfo"]
                 after = page_info["endCursor"]
                 has_next_page = page_info["hasNextPage"]
