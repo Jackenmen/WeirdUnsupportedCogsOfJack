@@ -30,7 +30,6 @@ query getMilestoneContributors($milestone: String!, $after: String) {
 
 
 class ChangelogMixin(MixinMeta):
-    @commands.is_owner()
     @commands.command()
     async def getcontributors(self, ctx: commands.Context, milestone: str) -> None:
         """Get contributors for the given milestone in Red's repo."""
