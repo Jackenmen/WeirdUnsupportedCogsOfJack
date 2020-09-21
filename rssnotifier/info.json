@@ -1,13 +1,13 @@
 {
     "name": "RSSNotifier",
-    "short": "RSSNotifier will notify users about feed updates from SinbadCogs's RSS cog.",
+    "short": "RSSNotifier will notify users about feed updates from aikaterna-cogs's RSS cog.",
     "description": "One of the rare cogs from this repo that could actually be considered useful.",
     "install_msg": "Thanks for installing RSSNotifier. To opt-in receiving notifications for feeds, use `[p]rssnotifier optin`",
     "author": [
         "jack1142 (Jackenmen#6607)"
     ],
     "required_cogs": {
-        "rss": "https://github.com/mikeshardmind/SinbadCogs"
+        "rss": "https://github.com/aikaterna/aikaterna-cogs"
     },
     "requirements": [],
     "tags": [

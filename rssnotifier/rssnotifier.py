@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Dict
 
 import discord
 from redbot.core import commands
@@ -76,22 +76,23 @@ class RSSNotifier(commands.Cog):
             )
 
     @commands.Cog.listener()
-    async def on_sinbadcogs_rss_send(
+    async def on_aikaternacogs_rss_message(
         self,
         *,
-        destination: discord.TextChannel,
-        feed_name: str,
-        forced_update: bool,
+        channel: discord.TextChannel,
+        feed_data: Dict[str, Any],
+        force: bool,
         **_kwargs: Any,
     ) -> None:
-        scope = self.config.custom(FEED, destination.id, feed_name).user_mentions
+        feed_name = feed_data["name"]
+        scope = self.config.custom(FEED, channel.id, feed_name).user_mentions
         user_mentions = await scope()
         if not user_mentions:
             return
-        if forced_update:
-            await destination.send(
+        if force:
+            await channel.send(
                 "THIS IS A FORCED UPDATE. RSSNotifier will not notify users about it."
             )
             return
         for page in pagify(" ".join(map("<@{}>".format, user_mentions)), delims=[" "]):
-            await destination.send(page)
+            await channel.send(page)
