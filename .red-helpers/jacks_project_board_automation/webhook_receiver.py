@@ -76,7 +76,7 @@ def request(query: str, variables: Dict[str, Any]) -> Dict[str, Any]:
     r = requests.post(
         "https://api.github.com/graphql",
         headers={"Authorization": f"token {GITHUB_TOKEN}"},
-        data={"query": query, "variables": variables},
+        json={"query": query, "variables": variables},
     )
     return r.json()["data"]
 

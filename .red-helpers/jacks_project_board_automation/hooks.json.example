@@ -27,16 +27,6 @@
         {
           "match": {
             "type": "value",
-            "value": "refs/heads/V3/develop",
-            "parameter": {
-              "source": "payload",
-              "name": "ref"
-            }
-          }
-        },
-        {
-          "match": {
-            "type": "value",
             "value": "Cog-Creators/Red-DiscordBot",
             "parameter": {
               "source": "payload",
