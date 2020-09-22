@@ -42,7 +42,7 @@ query getProjectCardsForPullRequest($pr_number: Int!) {
             number
           }
           column {
-            databaseId
+            id
           }
         }
       }
@@ -52,21 +52,9 @@ query getProjectCardsForPullRequest($pr_number: Int!) {
 """.strip()
 
 GQL_MOVE_PROJECT_CARD_TO_COLUMN = """
-query getProjectCardsForPullRequest($pr_number: Int!) {
-  repository(owner: "Cog-Creators", name: "Red-DiscordBot") {
-    pullRequest(number: $pr_number) {
-      projectCards(first: 100) {
-        nodes {
-          id
-          project {
-            number
-          }
-          column {
-            id
-          }
-        }
-      }
-    }
+mutation moveProjectCardToColumn($card_id: ID!, $column_id: ID!) {
+  moveProjectCard(input:{cardId:$card_id, columnId: $column_id}) {
+    clientMutationId
   }
 }
 """.strip()
@@ -140,7 +128,7 @@ def main() -> int:
 
     card_id = card_data["id"]
     request(
-        GQL_GET_PROJECT_CARDS_FOR_PR,
+        GQL_MOVE_PROJECT_CARD_TO_COLUMN,
         {"card_id": card_id, "column_id": CHANGES_REQUESTED_COLUMN_ID},
     )
 
