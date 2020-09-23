@@ -129,7 +129,7 @@ def main() -> int:
     card_id = card_data["id"]
     request(
         GQL_MOVE_PROJECT_CARD_TO_COLUMN,
-        {"card_id": card_id, "column_id": CHANGES_REQUESTED_COLUMN_ID},
+        {"card_id": card_id, "column_id": UPDATED_SINCE_REVIEW_COLUMN_ID},
     )
 
     return 0
