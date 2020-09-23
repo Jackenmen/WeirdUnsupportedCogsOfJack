@@ -60,13 +60,24 @@ mutation moveProjectCardToColumn($card_id: ID!, $column_id: ID!) {
 """.strip()
 
 
+class GQLError(Exception):
+    def __init__(self, resp: requests.Response) -> None:
+        super().__init__(f"GraphQL request failed. {resp.status_code=} {resp.text=}")
+
+
 def request(query: str, variables: Dict[str, Any]) -> Dict[str, Any]:
-    r = requests.post(
+    resp = requests.post(
         "https://api.github.com/graphql",
         headers={"Authorization": f"token {GITHUB_TOKEN}"},
         json={"query": query, "variables": variables},
     )
-    return r.json()["data"]
+    # non-200 will probably only happen for server errors, but still worth checking
+    if resp.status_code != 200:
+        raise GQLError(resp)
+    response_data = resp.json()
+    if "errors" in response_data:
+        raise GQLError(resp)
+    return response_data["data"]
 
 
 def main() -> int:
@@ -127,9 +138,17 @@ def main() -> int:
         return 0
 
     card_id = card_data["id"]
-    request(
-        GQL_MOVE_PROJECT_CARD_TO_COLUMN,
-        {"card_id": card_id, "column_id": UPDATED_SINCE_REVIEW_COLUMN_ID},
+    try:
+        request(
+            GQL_MOVE_PROJECT_CARD_TO_COLUMN,
+            {"card_id": card_id, "column_id": UPDATED_SINCE_REVIEW_COLUMN_ID},
+        )
+    except GQLError as exc:
+        print(str(exc))
+        return 1
+    print(
+        f"Moved the project card with ID {card_id}"
+        " to 'Updated since my review' column."
     )
 
     return 0
