@@ -31,6 +31,7 @@ query getMilestoneContributors($milestone: String!, $after: String) {
   }
 }
 """
+GITHUB_USERS = "GITHUB_USERS"
 
 
 def get_rst_string(display_name: str, github_username: str) -> str:
@@ -49,11 +50,11 @@ class ChangelogMixin(MixinMeta):
             force_registration=True,
         )
         # {github_username: {...}}
-        self.__config.init_custom("GITHUB_USERS", 1)
-        self.__config.register_custom(custom_name=None)
+        self.__config.init_custom(GITHUB_USERS, 1)
+        self.__config.register_custom(GITHUB_USERS, custom_name=None)
 
     def gh_user_config(self, github_username: str) -> Group:
-        return self.__config.custom("GITHUB_USERS", github_username.lower())
+        return self.__config.custom(GITHUB_USERS, github_username.lower())
 
     async def get_name(self, github_username: str) -> str:
         group = self.gh_user_config(github_username)
