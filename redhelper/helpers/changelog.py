@@ -51,14 +51,14 @@ class ChangelogMixin(MixinMeta):
         )
         # {github_username: {...}}
         self.__config.init_custom(GITHUB_USERS, 1)
-        self.__config.register_custom(GITHUB_USERS, custom_name=None)
+        self.__config.register_custom(GITHUB_USERS, display_name=None)
 
     def gh_user_config(self, github_username: str) -> Group:
         return self.__config.custom(GITHUB_USERS, github_username.lower())
 
     async def get_name(self, github_username: str) -> str:
         group = self.gh_user_config(github_username)
-        return await group.custom_name() or github_username
+        return await group.display_name() or github_username
 
     @commands.command()
     async def getcontributors(
