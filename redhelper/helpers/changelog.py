@@ -1,13 +1,19 @@
+import logging
+from typing import TYPE_CHECKING, Dict, List, Literal
+
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.commands import NoParseOptional as Optional
 from redbot.core.config import Config, Group
-from redbot.core.utils.chat_formatting import box
+from redbot.core.utils.chat_formatting import box, humanize_list
 
 from ..abc import MixinMeta
 
 
+log = logging.getLogger("red.weirdjack.redhelper.helpers.changelog")
+
+GITHUB_USERS = "GITHUB_USERS"
 GET_MILESTONE_CONTRIBUTORS_QUERY = """
 query getMilestoneContributors($milestone: String!, $after: String) {
   repository(owner: "Cog-Creators", name: "Red-DiscordBot") {
@@ -31,13 +37,68 @@ query getMilestoneContributors($milestone: String!, $after: String) {
   }
 }
 """
-GITHUB_USERS = "GITHUB_USERS"
+GET_PULL_REQUEST_QUERY = """
+query getPullRequest($number: Int!) {
+    repository(owner: "Cog-Creators", name: "Red-DiscordBot") {
+        pullRequest(number: $number) {
+            id
+            labels(first: 100) {
+                nodes {
+                    id
+                }
+            }
+        }
+    }
+}
+"""
+ADD_AND_REMOVE_LABELS_MUTATION = """
+mutation addAndRemoveLabels($pr_id: ID!, $to_add: [ID!]!, $to_remove: [ID!]!) {
+  addLabelsToLabelable(input:{labelableId: $pr_id, labelIds: $to_add}) {
+    clientMutationId
+  }
+  removeLabelsFromLabelable(input:{labelableId: $pr_id, labelIds: $to_remove}) {
+    clientMutationId
+  }
+}
+"""
+LABEL_NAMES_TO_IDS = {
+    "pending": "MDU6TGFiZWwxNDY5NDkyNzMw",
+    "skipped": "MDU6TGFiZWwxOTIxMDcyNzYw",
+    "added": "MDU6TGFiZWwxOTIxMDcxNzgw",
+}
 
 
 def get_rst_string(display_name: str, github_username: str) -> str:
     if display_name == github_username:
         return f":ghuser:`{github_username}`"
     return f":ghuser:`{display_name} <{github_username}>`"
+
+
+CHANGELOG_EDITORS = (473541068378341376,)
+
+
+def is_changelog_editor():
+    async def predicate(ctx: commands.Context) -> bool:
+        return await ctx.bot.is_owner(ctx.author) or ctx.author.id in CHANGELOG_EDITORS
+
+    return commands.check(predicate)
+
+
+if TYPE_CHECKING:
+    ChangelogLabelName = Literal["pending", "skipped", "added"]
+else:
+
+    class ChangelogLabelName(commands.Converter):
+        async def convert(
+            self, ctx: commands.Context, argument: str
+        ) -> Literal["pending", "skipped", "added"]:
+            argument = argument.lower()
+            if argument not in LABEL_NAMES_TO_IDS:
+                raise commands.BadArgument(
+                    "Invalid label name.\n"
+                    "Valid label names are: `pending`, `skipped`, `added`."
+                )
+            return argument
 
 
 class ChangelogMixin(MixinMeta):
@@ -148,3 +209,91 @@ class ChangelogMixin(MixinMeta):
             await ctx.send("Display name reset.")
         else:
             await ctx.send("Display name updated.")
+
+    @is_changelog_editor()
+    @commands.command(require_var_positional=True)
+    async def changelog(
+        self, ctx: commands.Context, label: ChangelogLabelName, *pr_numbers: int
+    ) -> None:
+        """
+        Update the changelog label.
+
+        Valid label names are: `pending`, `skipped`, `added`.
+        """
+        token = (await self.bot.get_shared_api_tokens("github")).get("token", "")
+        add_label_id = LABEL_NAMES_TO_IDS.get(label)
+        remove_label_ids = [
+            label_id for label_id in LABEL_NAMES_TO_IDS.values() if label_id != add_label_id
+        ]
+        pr_ids: Dict[int, str] = {}
+        # error lists
+        not_found: List[int] = []
+        already_labeled: List[int] = []
+        unexpected_errors: List[int] = []
+
+        for number in pr_numbers:
+            async with self.session.post(
+                "https://api.github.com/graphql",
+                json={
+                    "query": GET_PULL_REQUEST_QUERY,
+                    "variables": {"number": number},
+                },
+                headers={"Authorization": f"Bearer {token}"},
+            ) as resp:
+                json = await resp.json()
+                pull_request = json["data"]["repository"]["pullRequest"]
+                if pull_request is None:
+                    not_found.append(number)
+                    continue
+                label_nodes = pull_request["labels"]["nodes"]
+                if any(node["id"] == add_label_id for node in label_nodes):
+                    already_labeled.append(number)
+                    continue
+                pr_ids[number] = pull_request["id"]
+
+        success: List[int] = []
+
+        for pr_number, pr_id in pr_ids.items():
+            async with self.session.post(
+                "https://api.github.com/graphql",
+                json={
+                    "query": ADD_AND_REMOVE_LABELS_MUTATION,
+                    "variables": {
+                        "pr_id": pr_id,
+                        "to_add": [add_label_id],
+                        "to_remove": remove_label_ids,
+                    },
+                },
+                headers={"Authorization": f"Bearer {token}"},
+            ) as resp:
+                json = await resp.json()
+                if "errors" in json:
+                    unexpected_errors.append(pr_number)
+                    log.error(
+                        "Unexpected error occured when making labels mutation for PR #%s: %r",
+                        pr_number,
+                        json["errors"],
+                    )
+                else:
+                    success.append(pr_number)
+
+        errors = []
+        if not_found:
+            errors.append(
+                f"PRs with these numbers couldn't be found: {humanize_list(not_found)}"
+            )
+        if already_labeled:
+            prs_list = humanize_list(list(map("#{}".format, already_labeled)))
+            errors.append(f"These PRs were already labeled properly: {prs_list}")
+        if unexpected_errors:
+            prs_list = humanize_list(list(map("#{}".format, unexpected_errors)))
+            errors.append(
+                f"Unexpected errors occured when updating labels for PRs: {prs_list}"
+            )
+        msg = []
+        if success:
+            prs_list = humanize_list(list(map("#{}".format, success)))
+            msg.append(f"Labels have been updated successfully for PRs: {prs_list}")
+        if errors:
+            msg.append("\n".join(errors))
+        await ctx.send("\n\n".join(msg))
