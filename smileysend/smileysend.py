@@ -28,10 +28,9 @@ REPLIES_ENABLED = False
 
 real_send = Messageable.send
 real_send_interactive = Context.send_interactive
-OMEGA = (
-    ["\N{SMILING FACE WITH OPEN MOUTH}"] * 7
-    + ["\N{SMILING CAT FACE WITH OPEN MOUTH}"]
-)
+OMEGA = ["\N{SMILING FACE WITH OPEN MOUTH}"] * 7 + [
+    "\N{SMILING CAT FACE WITH OPEN MOUTH}"
+]
 SPECIAL_AUTHOR_CASES = {
     57287406247743488: ["\N{JEANS}"],
     154497072148643840: ["\N{SMILING CAT FACE WITH OPEN MOUTH}"],
@@ -48,6 +47,7 @@ FULL_MORE_LIST = MORE_LIST + [
 
 
 if discord.version_info[:2] >= (1, 6):
+
     async def get_msg_ref(
         messageable: Messageable, emoji: str, *, smileysend_force_new_ref: bool = False
     ) -> discord.MessageReference:
@@ -144,7 +144,10 @@ if discord.version_info[:2] >= (1, 6):
             mention_author=mention_author,
             smileysend_emoji=emoji,
         )
+
+
 elif discord.version_info[:2] >= (1, 4):
+
     @functools.wraps(real_send)
     async def send(
         self,
@@ -182,7 +185,10 @@ elif discord.version_info[:2] >= (1, 4):
             nonce=nonce,
             allowed_mentions=allowed_mentions,
         )
+
+
 else:
+
     @functools.wraps(real_send)
     async def send(
         self,
