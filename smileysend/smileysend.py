@@ -57,7 +57,7 @@ if discord.version_info[:2] >= (1, 6):
 
         if ref_msg_id is None:
             emoji_count = (2000 + 1) // (len(emoji) + 1)
-            ref_msg_content = " ".join(itertools.repeat(emoji, min(100, emoji_count)))
+            ref_msg_content = " ".join(itertools.repeat(emoji, min(50, emoji_count)))
             ref_msg = await real_send(messageable, ref_msg_content)
 
             ref_data["message_id"] = ref_msg_id = ref_msg.id
