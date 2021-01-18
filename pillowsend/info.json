@@ -1,0 +1,16 @@
+{
+    "name": "PillowSend",
+    "short": "Have you seen square dick? Think that but with text and done on every message sent by the bot!",
+    "description": "Have you seen square dick? Think that but with text and done on every message sent by the bot!",
+    "install_msg": "Thanks for installing PillowSend. Enjoy the square dick power with all text messages turning into images generated with pillow!",
+    "author": [
+        "jack1142 (Jackenmen#6607)"
+    ],
+    "required_cogs": {},
+    "requirements": ["pillow~=8.1"],
+    "tags": [],
+    "min_bot_version": "3.4.5",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG"
+}

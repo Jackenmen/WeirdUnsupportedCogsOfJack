@@ -17,5 +17,9 @@ Please see [LICENSE file](LICENSE) for details. In short, this project is open s
 
 ---
 
+This project bundles fonts from [Poppins family](https://www.google.com/get/noto/) which is distributed under the SIL Open Font License.
+
+---
+
 > Jakub Kuczys &nbsp;&middot;&nbsp;
 > GitHub [@jack1142](https://github.com/jack1142)
