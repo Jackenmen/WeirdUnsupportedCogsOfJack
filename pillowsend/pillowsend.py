@@ -1,8 +1,9 @@
 import asyncio
 import functools
+import re
 import textwrap
 from io import BytesIO
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import discord
 from discord.abc import Messageable
@@ -37,7 +38,9 @@ async def get_text_image(text: str) -> discord.File:
     )
 
 
-async def process_args(messageable, content, file, files) -> List[discord.File]:
+async def process_args(
+    messageable, content, file, files
+) -> Tuple[Optional[str], List[discord.File]]:
     if file is not None and files is not None:
         raise discord.InvalidArgument(
             "cannot pass both file and files parameter to send()"
@@ -47,7 +50,15 @@ async def process_args(messageable, content, file, files) -> List[discord.File]:
     elif files is None:
         files = []
     if content is None:
-        return files
+        return None, files
+
+    mentions = [
+        match.group(0) for match in re.finditer(r"<@(?:!|&)?(\d+)>", content)
+    ]
+    ret_content = None
+    if mentions:
+        ret_content = ", ".join(mentions)
+
     if len(files) > 10:
         raise discord.InvalidArgument(
             "files parameter must be a list of up to 10 elements"
@@ -56,7 +67,7 @@ async def process_args(messageable, content, file, files) -> List[discord.File]:
         await real_send(messageable, file=await get_text_image(content))
     else:
         files.insert(0, await get_text_image(content))
-    return files
+    return ret_content, files
 
 
 if discord.version_info[:2] >= (1, 6):
@@ -76,9 +87,10 @@ if discord.version_info[:2] >= (1, 6):
         reference=None,
         mention_author=None,
     ):
-        files = await process_args(self, content, file, files)
+        content, files = await process_args(self, content, file, files)
         return await real_send(
             self,
+            content,
             tts=tts,
             embed=embed,
             files=files,
@@ -105,9 +117,10 @@ elif discord.version_info[:2] >= (1, 4):
         nonce=None,
         allowed_mentions=None,
     ):
-        files = await process_args(self, content, file, files)
+        content, files = await process_args(self, content, file, files)
         return await real_send(
             self,
+            content,
             tts=tts,
             embed=embed,
             files=files,
@@ -131,9 +144,10 @@ else:
         delete_after=None,
         nonce=None,
     ):
-        files = await process_args(self, content, file, files)
+        content, files = await process_args(self, content, file, files)
         return await real_send(
             self,
+            content,
             tts=tts,
             embed=embed,
             files=files,
