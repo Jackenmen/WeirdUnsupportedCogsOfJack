@@ -53,7 +53,7 @@ async def process_args(
         return None, files
 
     mentions = [
-        match.group(0) for match in re.finditer(r"<@(?:!|&)?(\d+)>", content)
+        match.group(0) for match in re.finditer(r"<@(?:!|&)?\d+>|(?:https?|s?ftp)://\S+", content)
     ]
     ret_content = None
     if mentions:
