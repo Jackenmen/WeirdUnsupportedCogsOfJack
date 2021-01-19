@@ -14,6 +14,9 @@ from redbot.core.data_manager import bundled_data_path
 
 real_send = Messageable.send
 FONT: Optional[ImageFont.ImageFont] = None
+MENTIONS_RE = re.compile(
+    r"<@(?:!|&)?\d+>|<(?:https?|s?ftp)://\S+>|(?:https?|s?ftp)://\S+", re.I
+)
 
 
 def _generate_image(text: str) -> discord.File:
@@ -52,9 +55,7 @@ async def process_args(
     if content is None:
         return None, files
 
-    mentions = [
-        match.group(0) for match in re.finditer(r"<@(?:!|&)?\d+>|(?:https?|s?ftp)://\S+", content)
-    ]
+    mentions = [match.group(0) for match in MENTIONS_RE.finditer(content)]
     ret_content = None
     if mentions:
         ret_content = ", ".join(mentions)
