@@ -15,17 +15,27 @@ log = logging.getLogger("red.weirdjack.redhelper.helpers.changelog")
 
 GITHUB_USERS = "GITHUB_USERS"
 GET_MILESTONE_CONTRIBUTORS_QUERY = """
-query getMilestoneContributors($milestone: String!, $after: String) {
+query getMilestoneContributors(
+  $milestone: String!,
+  $after: String,
+  $states: [PullRequestState!],
+) {
   repository(owner: "Cog-Creators", name: "Red-DiscordBot") {
     milestones(first: 1, query: $milestone) {
       nodes {
         title
-        pullRequests(first: 100, after: $after) {
+        pullRequests(first: 100, after: $after, states: $states) {
           nodes {
             author {
               login
             }
-            merged
+            latestOpinionatedReviews(first: 100, writersOnly: true) {
+              nodes {
+                author {
+                  login
+                }
+              }
+            }
           }
           pageInfo {
             endCursor
@@ -135,6 +145,9 @@ class ChangelogMixin(MixinMeta):
         has_next_page = True
         authors = set()
         token = (await self.bot.get_shared_api_tokens("github")).get("token", "")
+        states = ["MERGED"]
+        if show_not_merged:
+            states.append("OPEN")
         while has_next_page:
             async with self.session.post(
                 "https://api.github.com/graphql",
@@ -143,6 +156,7 @@ class ChangelogMixin(MixinMeta):
                     "variables": {
                         "milestone": milestone,
                         "after": after,
+                        "states": states,
                     },
                 },
                 headers={"Authorization": f"Bearer {token}"},
@@ -155,11 +169,13 @@ class ChangelogMixin(MixinMeta):
                 milestone_title = milestone_data["title"]
                 pull_requests = milestone_data["pullRequests"]
                 nodes = pull_requests["nodes"]
-                authors |= {
-                    node["author"]["login"]
-                    for node in nodes
-                    if show_not_merged or node["merged"]
-                }
+                for pr_node in nodes:
+                    authors.add(pr_node["author"]["login"])
+                    reviews = pr_node["latestOpinionatedReviews"]["nodes"]
+                    authors.update(
+                        review_node["author"]["login"] for review_node in reviews
+                    )
+
                 page_info = pull_requests["pageInfo"]
                 after = page_info["endCursor"]
                 has_next_page = page_info["hasNextPage"]
