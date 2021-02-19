@@ -134,6 +134,13 @@ class NewContributorsMixin(MixinMeta):
                 if (channel := self.bot.get_channel(channel_id)) is not None
             ]
             for channel in output_channels:
+                prefixes = await self.bot.get_valid_prefixes(channel.guild)
+                command = inline(
+                    f"{prefixes[0]}newcontributors add {username} <member>"
+                )
+                embed.set_footer(
+                    text=f"Use {command} to map the contributor to server member."
+                )
                 await channel.send(embed=embed)
 
     @commands.is_owner()
