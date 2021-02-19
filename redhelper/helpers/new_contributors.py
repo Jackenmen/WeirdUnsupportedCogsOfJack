@@ -312,7 +312,7 @@ class NewContributorsMixin(MixinMeta):
 
             author_data["discord_user_id"] = user.id
             async with self.__config.leftguild_contributors() as leftguild_contributors:
-                leftguild_contributors[username] = author_data
+                leftguild_contributors[user.id] = author_data
 
         await ctx.send("Contributor hack-added.")
 
@@ -480,14 +480,12 @@ class NewContributorsMixin(MixinMeta):
                 return
 
             for contributor_data in added_contributors.values():
-                user_id = contributor_data["discord_user_id"]
-                if user_id is not None and user_id == member.id:
+                discord_user_id = contributor_data["discord_user_id"]
+                if discord_user_id is not None and discord_user_id == member.id:
                     break
             else:
                 return
 
             added_contributors.pop(contributor_data["username"])
             async with self.__config.leftguild_contributors() as leftguild_contributors:
-                leftguild_contributors[
-                    contributor_data["discord_user_id"]
-                ] = contributor_data
+                leftguild_contributors[discord_user_id] = contributor_data
