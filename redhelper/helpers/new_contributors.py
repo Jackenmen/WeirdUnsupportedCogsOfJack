@@ -267,8 +267,8 @@ class NewContributorsMixin(MixinMeta):
             for page in pagify(text):
                 await ctx.send(text)
 
-    @newcontributors.command(name="addcontributor")
-    async def newcontributors_addcontributor(
+    @newcontributors.command(name="add")
+    async def newcontributors_add(
         self, ctx: GuildContext, username: str, member: discord.Member
     ):
         """Add single contributor by username."""
@@ -292,7 +292,7 @@ class NewContributorsMixin(MixinMeta):
         self, ctx: GuildContext, username: str, user_id: int
     ):
         if ctx.guild.get_member(user_id) is not None:
-            command = inline(f"{ctx.prefix}newcontributors addcontributor")
+            command = inline(f"{ctx.prefix}newcontributors add")
             await ctx.send(
                 f"This user is in the server, please use {command} instead."
             )
@@ -316,8 +316,8 @@ class NewContributorsMixin(MixinMeta):
 
         await ctx.send("Contributor hack-added.")
 
-    @newcontributors.command(name="ignorecontributor")
-    async def newcontributors_ignorecontributor(
+    @newcontributors.command(name="ignore")
+    async def newcontributors_ignore(
         self, ctx: GuildContext, username: str
     ) -> None:
         """Ignore contributor by username. This should only be used for bot accounts."""
@@ -332,8 +332,8 @@ class NewContributorsMixin(MixinMeta):
 
         await ctx.send("Contributor ignored.")
 
-    @newcontributors.command(name="unignorecontributor")
-    async def newcontributor_unignorecontributor(
+    @newcontributors.command(name="unignore")
+    async def newcontributor_unignore(
         self, ctx: GuildContext, username: str
     ):
         async with self.__config.added_contributors() as added_contributors:
