@@ -1,8 +1,10 @@
 import asyncio
 import json
 import logging
-from typing import Dict
+import re
+from typing import Dict, TypedDict
 
+import aiohttp
 import discord
 from discord.ext.commands.view import StringView  # DEP-WARN
 from redbot.core import commands
@@ -15,6 +17,7 @@ from redbot.core.utils.predicates import MessagePredicate
 from ..abc import MixinMeta
 from ..discord_utils import safe_delete_message
 
+log = logging.getLogger("red.weirdjack.redhelper.helpers.newcontributors")
 
 GET_CONTRIBUTORS_QUERY = """
 query getContributors($after: String) {
@@ -29,12 +32,14 @@ query getContributors($after: String) {
                 email
                 name
                 user {
+                  id
                   login
                 }
               }
               associatedPullRequests(first:1) {
                 nodes {
                   author {
+                    id
                     login
                   }
                 }
@@ -52,7 +57,68 @@ query getContributors($after: String) {
 }
 """
 
-log = logging.getLogger("red.weirdjack.redhelper.helpers.newcontributors")
+
+class IncompleteAuthorData(TypedDict):
+    name: str
+    email: str
+    username: str
+
+
+class AuthorData(IncompleteAuthorData):
+    id: str
+
+
+class UserIdQuery:
+    def __init__(self, incomplete_authors: Dict[str, IncompleteAuthorData]) -> None:
+        self.incomplete_authors = incomplete_authors
+        self.usernames = list(incomplete_authors.keys())
+
+    @classmethod
+    async def fetch_author_data(
+        cls,
+        incomplete_authors: Dict[str, IncompleteAuthorData],
+        *,
+        session: aiohttp.ClientSession,
+        gh_token: str,
+    ) -> Dict[str, AuthorData]:
+        query = cls(incomplete_authors)
+        query_string = query._get_query()
+        async with session.post(
+            "https://api.github.com/graphql",
+            json={"query": query_string},
+            headers={"Authorization": f"Bearer {gh_token}"}
+        ) as resp:
+            data = await resp.json()
+
+        authors = query._get_authors_from_resp_data(data["data"])
+        return authors
+
+    def _get_query(self) -> str:
+        query_parts = ["query{"]
+        for idx, username in enumerate(self.usernames):
+            query_parts.append(
+                f"u{idx}:"
+                f'user(login:"{username}")'
+                "{id}"
+            )
+        query_parts.append("}")
+        return "".join(query_parts)
+
+    def _get_authors_from_resp_data(
+        self, data: Dict[str, Dict[str, str]]
+    ) -> Dict[str, AuthorData]:
+        authors: Dict[str, AuthorData] = {}
+        for idx, username in enumerate(self.usernames):
+            user_data = data.get(f"u{idx}")
+            if user_data is None:
+                log.error("Couldn't find user ID for user with username: %s", username)
+                continue
+            authors[user_data["id"]] = {
+                **self.incomplete_authors[username],
+                "id": user_data["id"],
+            }
+
+        return authors
 
 
 class NewContributorsMixin(MixinMeta):
@@ -66,6 +132,7 @@ class NewContributorsMixin(MixinMeta):
             force_registration=True,
         )
         self.__config.register_global(
+            login_id_map={},
             added_contributors={},
             pending_contributors={},
             leftguild_contributors={},
@@ -92,26 +159,41 @@ class NewContributorsMixin(MixinMeta):
     ) -> None:
         raw_data = await reader.read()
         payload = json.loads(raw_data.decode())
+        writer.close()
 
         # do something with the data here
         added_contributors = await self.__config.added_contributors()
-        new_pending_contributors = {}
+        login_id_map = await self.__config.login_id_map()
+        new_pending_contributors_incomplete = {}
         for username, author_data in payload.items():
-            if username not in added_contributors:
-                new_pending_contributors[username] = author_data
+            if username.endswith("[bot]"):
+                continue
+            user_id = login_id_map.get(username)
+            if user_id is not None and user_id in added_contributors:
+                continue
+            new_pending_contributors_incomplete[username] = author_data
+
+        if not new_pending_contributors_incomplete:
+            return
+
+        new_pending_contributors = await UserIdQuery.fetch_author_data(
+            new_pending_contributors_incomplete,
+            session=self.session,
+            gh_token=(await self.bot.get_shared_api_tokens("github")).get("token", ""),
+        )
 
         async with self.__config.pending_contributors() as pending_contributors:
-            for username, author_data in dict(new_pending_contributors).items():
-                if username in pending_contributors:
-                    new_pending_contributors.pop(username, None)
-                pending_contributors[username] = author_data
-
-        writer.close()
+            async with self.__config.login_id_map() as login_id_map:
+                for user_id, author_data in dict(new_pending_contributors).items():
+                    login_id_map[author_data["username"]] = user_id
+                    if user_id in pending_contributors:
+                        new_pending_contributors.pop(user_id, None)
+                    pending_contributors[user_id] = author_data
 
         await self.new_pending_contributors_notify(new_pending_contributors)
 
     async def new_pending_contributors_notify(
-        self, new_pending_contributors: Dict[str, Dict[str, str]]
+        self, new_pending_contributors: Dict[str, AuthorData]
     ) -> None:
         for username, author_data in new_pending_contributors.items():
             commit_author_name = author_data["name"]
@@ -200,7 +282,7 @@ class NewContributorsMixin(MixinMeta):
                             prompt_to_check_logs = True
                             continue
                         try:
-                            username = associated_pr["author"]["login"]
+                            user_data = associated_pr["author"]
                         except KeyError:
                             # author of PR has deleted his GH account
                             log.error(
@@ -215,13 +297,15 @@ class NewContributorsMixin(MixinMeta):
                             prompt_to_check_logs = True
                             continue
                     else:
-                        username = author_data["user"]["login"]
+                        user_data = author_data["user"]
+                    user_id = user_data["id"]
                     if (
-                        username not in new_pending_contributors
-                        and username not in added_contributors
+                        user_id not in new_pending_contributors
+                        and user_id not in added_contributors
                     ):
-                        new_pending_contributors[username] = {
-                            "username": username,
+                        new_pending_contributors[user_id] = {
+                            "id": user_id,
+                            "username": user_data["login"],
                             "name": author_data["name"],
                             "email": author_data["email"],
                         }
@@ -248,28 +332,28 @@ class NewContributorsMixin(MixinMeta):
         if await ctx.embed_requested():
             if show_emails:
                 description = "\n".join(
-                    f"[@{username}](https://github.com/{username})"
+                    f"[@{c['username']}](https://github.com/{c['username']})"
                     f" (Git name: {c['name']} <{c['email']}>)"
-                    for username, c in pending_contributors.items()
+                    for c in pending_contributors.values()
                 )
             else:
                 description = "\n".join(
-                    f"[@{username}](https://github.com/{username})"
+                    f"[@{c['username']}](https://github.com/{c['username']})"
                     f" (Git name: {c['name']})"
-                    for username, c in pending_contributors.items()
+                    for c in pending_contributors.values()
                 )
             for page in pagify(description):
                 await ctx.send(embed=discord.Embed(description=description))
         else:
             if show_emails:
                 text = "\n".join(
-                    f"@{username} (Git name: {c['name']} <{c['email']}>)"
-                    for username, c in pending_contributors.items()
+                    f"@{c['username']} (Git name: {c['name']} <{c['email']}>)"
+                    for c in pending_contributors.values()
                 )
             else:
                 text = "\n".join(
-                    f"@{username} (Git name: {c['name']})"
-                    for username, c in pending_contributors.items()
+                    f"@{c['username']} (Git name: {c['name']})"
+                    for c in pending_contributors.values()
                 )
             for page in pagify(text):
                 await ctx.send(text)
@@ -279,14 +363,21 @@ class NewContributorsMixin(MixinMeta):
         self, ctx: GuildContext, username: str, member: discord.Member
     ):
         """Add single contributor by username."""
+        login_id_map = await self.__config.login_id_map()
+        try:
+            user_id = login_id_map.get(username)
+        except KeyError:
+            await ctx.send("Contributor with this username isn't in any list.")
+            return
+
         async with self.__config.pending_contributors() as pending_contributors:
-            if (author_data := pending_contributors.pop(username, None)) is None:
+            if (author_data := pending_contributors.pop(user_id, None)) is None:
                 await ctx.send("Contributor with this username isn't in pending list.")
                 return
 
             author_data["discord_user_id"] = member.id
             async with self.__config.added_contributors() as added_contributors:
-                added_contributors[username] = author_data
+                added_contributors[user_id] = author_data
 
         await ctx.send(
             "Contributor added.\n"
@@ -299,7 +390,7 @@ class NewContributorsMixin(MixinMeta):
         self, ctx: GuildContext, username: str, user_id: int
     ):
         if ctx.guild.get_member(user_id) is not None:
-            command = inline(f"{ctx.prefix}newcontributors add")
+            command = inline(f"{ctx.clean_prefix}newcontributors add")
             await ctx.send(
                 f"This user is in the server, please use {command} instead."
             )
@@ -312,8 +403,15 @@ class NewContributorsMixin(MixinMeta):
             await ctx.send("User doesn't exist!")
             return
 
+        login_id_map = await self.__config.login_id_map()
+        try:
+            user_id = login_id_map.get(username)
+        except KeyError:
+            await ctx.send("Contributor with this username isn't in any list.")
+            return
+
         async with self.__config.pending_contributors() as pending_contributors:
-            if (author_data := pending_contributors.pop(username, None)) is None:
+            if (author_data := pending_contributors.pop(user_id, None)) is None:
                 await ctx.send("Contributor with this username isn't in pending list.")
                 return
 
@@ -328,14 +426,21 @@ class NewContributorsMixin(MixinMeta):
         self, ctx: GuildContext, username: str
     ) -> None:
         """Ignore contributor by username. This should only be used for bot accounts."""
+        login_id_map = await self.__config.login_id_map()
+        try:
+            user_id = login_id_map.get(username)
+        except KeyError:
+            await ctx.send("Contributor with this username isn't in any list.")
+            return
+
         async with self.__config.pending_contributors() as pending_contributors:
-            if (author_data := pending_contributors.pop(username, None)) is None:
+            if (author_data := pending_contributors.pop(user_id, None)) is None:
                 await ctx.send("Contributor with this username isn't in pending list.")
                 return
 
             author_data["discord_user_id"] = None
             async with self.__config.added_contributors() as added_contributors:
-                added_contributors[username] = author_data
+                added_contributors[user_id] = author_data
 
         await ctx.send("Contributor ignored.")
 
@@ -343,8 +448,15 @@ class NewContributorsMixin(MixinMeta):
     async def newcontributor_unignore(
         self, ctx: GuildContext, username: str
     ):
+        login_id_map = await self.__config.login_id_map()
+        try:
+            user_id = login_id_map.get(username)
+        except KeyError:
+            await ctx.send("Contributor with this username isn't in any list.")
+            return
+
         async with self.__config.added_contributors() as added_contributors:
-            if (author_data := added_contributors.pop(username, None)) is None:
+            if (author_data := added_contributors.pop(user_id, None)) is None:
                 await ctx.send("Contributor with this username isn't in the list.")
                 return
 
@@ -353,7 +465,7 @@ class NewContributorsMixin(MixinMeta):
                 return
 
             async with self.__config.pending_contributors() as pending_contributors:
-                pending_contributors[username] = author_data
+                pending_contributors[user_id] = author_data
 
         await ctx.send("Contributor unignored.")
 
@@ -394,14 +506,14 @@ class NewContributorsMixin(MixinMeta):
         new_added_contributors = {}
 
         early_exit = False
-        for username, author_data in pending_contributors.items():
+        for user_id, author_data in pending_contributors.items():
             discord_user_id_line = (
                 f"**Discord user ID:** {discord_user_id}\n"
                 if (discord_user_id := author_data.get('discord_user_id')) is not None
                 else ""
             )
             bot_msg = await ctx.send(
-                f"**GitHub Username:** {username}\n"
+                f"**GitHub Username:** {author_data['username']}\n"
                 f"**Commit author name:** {author_data['name']}\n"
                 f"**Commit author email:** {author_data['email']}\n"
                 f"{discord_user_id_line}"
@@ -436,7 +548,7 @@ class NewContributorsMixin(MixinMeta):
                     continue
 
                 author_data["discord_user_id"] = member.id
-                new_added_contributors[username] = author_data
+                new_added_contributors[user_id] = author_data
                 break
             else:
                 # early-exit by breaking out of for loop
@@ -446,8 +558,8 @@ class NewContributorsMixin(MixinMeta):
             await safe_delete_message(bot_msg)
 
         async with self.__config.pending_contributors() as pending_contributors:
-            for username in new_added_contributors:
-                pending_contributors.pop(username, None)
+            for user_id in new_added_contributors:
+                pending_contributors.pop(user_id, None)
 
         async with self.__config.added_contributors() as added_contributors:
             added_contributors.update(new_added_contributors)
@@ -466,13 +578,13 @@ class NewContributorsMixin(MixinMeta):
             ) is None:
                 return
 
-            new_pending_contributors = {contributor_data["username"]: contributor_data}
+            new_pending_contributors = {contributor_data["id"]: contributor_data}
 
             async with self.__config.pending_contributors() as pending_contributors:
-                for username, author_data in dict(new_pending_contributors).items():
-                    if username in pending_contributors:
-                        new_pending_contributors.pop(username, None)
-                    pending_contributors[username] = author_data
+                for user_id, author_data in dict(new_pending_contributors).items():
+                    if user_id in pending_contributors:
+                        new_pending_contributors.pop(user_id, None)
+                    pending_contributors[user_id] = author_data
 
         await self.new_pending_contributors_notify(new_pending_contributors)
 
@@ -493,6 +605,6 @@ class NewContributorsMixin(MixinMeta):
             else:
                 return
 
-            added_contributors.pop(contributor_data["username"])
+            added_contributors.pop(contributor_data["id"])
             async with self.__config.leftguild_contributors() as leftguild_contributors:
                 leftguild_contributors[discord_user_id] = contributor_data
