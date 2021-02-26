@@ -195,7 +195,8 @@ class NewContributorsMixin(MixinMeta):
     async def new_pending_contributors_notify(
         self, new_pending_contributors: Dict[str, AuthorData]
     ) -> None:
-        for username, author_data in new_pending_contributors.items():
+        for author_data in new_pending_contributors.values():
+            username = author_data["username"]
             commit_author_name = author_data["name"]
             discord_user_id_line = (
                 f"\n**Discord user ID:** {discord_user_id}"
