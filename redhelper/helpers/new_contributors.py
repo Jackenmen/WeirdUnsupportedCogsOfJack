@@ -390,6 +390,7 @@ class NewContributorsMixin(MixinMeta):
     async def newcontributors_hackadd(
         self, ctx: GuildContext, username: str, user_id: int
     ):
+        """Hack-add a single contributor by username."""
         if ctx.guild.get_member(user_id) is not None:
             command = inline(f"{ctx.clean_prefix}newcontributors add")
             await ctx.send(
@@ -449,6 +450,7 @@ class NewContributorsMixin(MixinMeta):
     async def newcontributor_unignore(
         self, ctx: GuildContext, username: str
     ):
+        """Unignore contributor by username. Just in case you make a mistake ;)"""
         login_id_map = await self.__config.login_id_map()
         try:
             user_id = login_id_map.get(username)
