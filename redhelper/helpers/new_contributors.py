@@ -10,7 +10,7 @@ from discord.ext.commands.view import StringView  # DEP-WARN
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.commands import GuildContext
-from redbot.core.config import Config
+from redbot.core.config import Config, Group
 from redbot.core.utils.chat_formatting import inline, pagify
 from redbot.core.utils.predicates import MessagePredicate
 
@@ -595,17 +595,24 @@ class NewContributorsMixin(MixinMeta):
             # Ignore other servers the bot is in
             return
 
-        async with self.__config.added_contributors() as added_contributors:
-            if not added_contributors:
-                return
+        if await self._mark_contributor_as_left(self.__config.added_contributors, member):
+            return
+        await self._mark_contributor_as_left(self.__config.pending_contributors, member)
 
-            for contributor_data in added_contributors.values():
-                discord_user_id = contributor_data["discord_user_id"]
+    async def _mark_contributor_as_left(self, group: Group, member: discord.Member) -> bool:
+        async with group() as contributors:
+            if not contributors:
+                return False
+
+            for contributor_data in contributors.values():
+                discord_user_id = contributor_data.get("discord_user_id")
                 if discord_user_id is not None and discord_user_id == member.id:
                     break
             else:
-                return
+                return False
 
-            added_contributors.pop(contributor_data["id"])
+            contributors.pop(contributor_data["id"])
             async with self.__config.leftguild_contributors() as leftguild_contributors:
                 leftguild_contributors[discord_user_id] = contributor_data
+
+        return True
