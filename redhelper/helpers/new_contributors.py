@@ -19,6 +19,8 @@ from ..discord_utils import safe_delete_message
 
 log = logging.getLogger("red.weirdjack.redhelper.helpers.newcontributors")
 
+RED_MAIN_GUILD_ID = 133049272517001216
+ORG_MEMBER_ROLE_ID = 739263148024004749
 GET_CONTRIBUTORS_QUERY = """
 query getContributors($after: String) {
   repository(owner: "Cog-Creators", name: "Red-DiscordBot") {
@@ -119,6 +121,22 @@ class UserIdQuery:
             }
 
         return authors
+
+
+def is_org_member():
+    async def predicate(ctx: commands.Context) -> bool:
+        guild = ctx.bot.get_guild(RED_MAIN_GUILD_ID)
+        if guild is None:
+            return False
+        author = guild.get_member(ctx.author.id)
+        if author is None:
+            return False
+        role = guild.get_role(ORG_MEMBER_ROLE_ID)
+        if role is None:
+            return False
+        return role in author.roles
+
+    return commands.check(predicate)
 
 
 class NewContributorsMixin(MixinMeta):
@@ -226,12 +244,13 @@ class NewContributorsMixin(MixinMeta):
                 )
                 await channel.send(embed=embed)
 
-    @commands.is_owner()
+    @is_org_member()
     @commands.guild_only()
     @commands.group()
     async def newcontributors(self, ctx: GuildContext) -> None:
         """New contributors utility commands."""
 
+    @commands.is_owner()
     @commands.max_concurrency(1)
     @newcontributors.command(name="fetch")
     async def newcontributors_fetch(self, ctx: GuildContext) -> None:
@@ -391,7 +410,7 @@ class NewContributorsMixin(MixinMeta):
         self, ctx: GuildContext, username: str, user_id: int
     ):
         """Hack-add a single contributor by username."""
-        if ctx.guild.get_member(user_id) is not None:
+        if self.bot.get_guild(RED_MAIN_GUILD_ID).get_member(user_id) is not None:
             command = inline(f"{ctx.clean_prefix}newcontributors add")
             await ctx.send(
                 f"This user is in the server, please use {command} instead."
@@ -423,6 +442,7 @@ class NewContributorsMixin(MixinMeta):
 
         await ctx.send("Contributor hack-added.")
 
+    @commands.is_owner()
     @newcontributors.command(name="ignore")
     async def newcontributors_ignore(
         self, ctx: GuildContext, username: str
@@ -446,6 +466,7 @@ class NewContributorsMixin(MixinMeta):
 
         await ctx.send("Contributor ignored.")
 
+    @commands.is_owner()
     @newcontributors.command(name="unignore")
     async def newcontributor_unignore(
         self, ctx: GuildContext, username: str
@@ -472,6 +493,7 @@ class NewContributorsMixin(MixinMeta):
 
         await ctx.send("Contributor unignored.")
 
+    @commands.is_owner()
     @newcontributors.command(name="addoutput")
     async def newcontributors_addoutput(
         self, ctx: GuildContext, channel: discord.TextChannel
@@ -484,6 +506,7 @@ class NewContributorsMixin(MixinMeta):
             output_channels.append(channel.id)
         await ctx.send("Channel added to output channels.")
 
+    @commands.is_owner()
     @newcontributors.command(name="deleteoutput")
     async def newcontributors_deleteoutput(
         self, ctx: GuildContext, channel: discord.TextChannel
@@ -593,7 +616,7 @@ class NewContributorsMixin(MixinMeta):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member) -> None:
-        if member.guild.id != 133049272517001216:  # Red - Discord Bot server
+        if member.guild.id != RED_MAIN_GUILD_ID:  # Red - Discord Bot server
             # Ignore other servers the bot is in
             return
 
