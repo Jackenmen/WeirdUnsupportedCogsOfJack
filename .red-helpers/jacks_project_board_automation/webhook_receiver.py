@@ -97,25 +97,29 @@ def main() -> int:
         print("Ignoring my own actions.")
         return 0
 
-    if event_type == "issue_comment":
+    if (
+        event_type == "pull_request"
+        and action not in ("synchronize", "review_requested")
+        or event_type == "pull_request_review"
+        and action == "edited"
+        or event_type == "pull_request_review_comment"
+        and action != "created"
+    ):
+        print(f"Action type ({action}) skipped.")
+        return 0
+    elif event_type in [
+        "pull_request",
+        "pull_request_review",
+        "pull_request_review_comment",
+    ]:
+        pass
+    elif event_type == "issue_comment":
         if action != "created":
             print(f"Action type ({action}) skipped.")
             return 0
         issue_data = payload["issue"]
         if "pull_request" not in issue_data:
             print("Ignoring comment on a non-PR.")
-            return 0
-    elif event_type == "pull_request":
-        if action not in ("synchronize", "review_requested"):
-            print(f"Action type ({action}) skipped.")
-            return 0
-    elif event_type == "pull_request_review":
-        if action == "edited":
-            print(f"Action type ({action}) skipped.")
-            return 0
-    elif event_type == "pull_request_review_comment":
-        if action != "created":
-            print(f"Action type ({action}) skipped.")
             return 0
     else:
         print("Unsupported event type.")

@@ -22,8 +22,7 @@ async def send(self, content=None, *, tts=False, embed=None, file=None, files=No
     if files is None:
         files = []
     attachments = []
-    some_random_id = 679460791094607952
-    for file in files:
+    for some_random_id, file in enumerate(files, start=679460791094607952):
         attachment = {
             "id": str(some_random_id),
             "filename": file.filename,
@@ -32,7 +31,6 @@ async def send(self, content=None, *, tts=False, embed=None, file=None, files=No
             "proxy_url": f"https://media.discordapp.net/attachments/133251234164375552/679460791094607952/{file.filename}",
         }
         attachments.append(attachment)
-        some_random_id += 1
         file.close()
     return Message(
         state=state,
