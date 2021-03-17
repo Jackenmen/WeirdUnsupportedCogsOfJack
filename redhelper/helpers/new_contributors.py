@@ -92,8 +92,7 @@ class UserIdQuery:
         ) as resp:
             data = await resp.json()
 
-        authors = query._get_authors_from_resp_data(data["data"])
-        return authors
+        return query._get_authors_from_resp_data(data["data"])
 
     def _get_query(self) -> str:
         query_parts = ["query{"]
@@ -363,7 +362,7 @@ class NewContributorsMixin(MixinMeta):
                     for c in pending_contributors.values()
                 )
             for page in pagify(description):
-                await ctx.send(embed=discord.Embed(description=description))
+                await ctx.send(embed=discord.Embed(description=page))
         else:
             if show_emails:
                 text = "\n".join(
@@ -376,7 +375,7 @@ class NewContributorsMixin(MixinMeta):
                     for c in pending_contributors.values()
                 )
             for page in pagify(text):
-                await ctx.send(text)
+                await ctx.send(page)
 
     @newcontributors.command(name="add")
     async def newcontributors_add(
