@@ -185,7 +185,7 @@ class NewContributorsMixin(MixinMeta):
         for username, author_data in payload.items():
             if username.endswith("[bot]"):
                 continue
-            user_id = login_id_map.get(username)
+            user_id = login_id_map.get(username.lower())
             if user_id is not None and user_id in added_contributors:
                 continue
             new_pending_contributors_incomplete[username] = author_data
@@ -202,7 +202,7 @@ class NewContributorsMixin(MixinMeta):
         async with self.__config.pending_contributors() as pending_contributors:
             async with self.__config.login_id_map() as login_id_map:
                 for user_id, author_data in dict(new_pending_contributors).items():
-                    login_id_map[author_data["username"]] = user_id
+                    login_id_map[author_data["username"].lower()] = user_id
                     if user_id in pending_contributors:
                         new_pending_contributors.pop(user_id, None)
                     elif user_id in added_contributors:
@@ -387,7 +387,7 @@ class NewContributorsMixin(MixinMeta):
         """Add single contributor by username."""
         login_id_map = await self.__config.login_id_map()
         try:
-            user_id = login_id_map.get(username)
+            user_id = login_id_map.get(username.lower())
         except KeyError:
             await ctx.send("Contributor with this username isn't in any list.")
             return
@@ -428,7 +428,7 @@ class NewContributorsMixin(MixinMeta):
 
         login_id_map = await self.__config.login_id_map()
         try:
-            user_id = login_id_map.get(username)
+            user_id = login_id_map.get(username.lower())
         except KeyError:
             await ctx.send("Contributor with this username isn't in any list.")
             return
@@ -452,7 +452,7 @@ class NewContributorsMixin(MixinMeta):
         """Ignore contributor by username. This should only be used for bot accounts."""
         login_id_map = await self.__config.login_id_map()
         try:
-            user_id = login_id_map.get(username)
+            user_id = login_id_map.get(username.lower())
         except KeyError:
             await ctx.send("Contributor with this username isn't in any list.")
             return
@@ -476,7 +476,7 @@ class NewContributorsMixin(MixinMeta):
         """Unignore contributor by username. Just in case you make a mistake ;)"""
         login_id_map = await self.__config.login_id_map()
         try:
-            user_id = login_id_map.get(username)
+            user_id = login_id_map.get(username.lower())
         except KeyError:
             await ctx.send("Contributor with this username isn't in any list.")
             return
