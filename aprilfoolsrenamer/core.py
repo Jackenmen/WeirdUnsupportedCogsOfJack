@@ -8,6 +8,9 @@ from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import inline
 
 
+log = logging.getLogger("red.weirdjack.aprilfoolsrenamer")
+
+
 class AprilFoolsRenamer(commands.Cog):
     """A fun little April Fools cog that sets nicknames of all users using a given template."""
     def __init__(self, bot: Red) -> None:
@@ -143,5 +146,16 @@ class AprilFoolsRenamer(commands.Cog):
             ).index(member)
             + 1
         )
+        original_nick = member.nick  # most likely just None
         nick = tmpl.safe_substitute(index=idx)
-        await member.edit(nick=nick, reason="April Fools joke")
+        try:
+            await member.edit(nick=nick, reason="April Fools joke")
+        except discord.HTTPException as exc:
+            log.error(
+                "%s - An unexpected error occurred"
+                " when trying to edit member's nickname",
+                member,
+                exc_info=exc,
+            )
+        else:
+            await self.config.member(member).original_nick.set(original_nick)
