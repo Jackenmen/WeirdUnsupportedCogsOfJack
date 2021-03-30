@@ -79,7 +79,8 @@ class AprilFoolsRenamer(commands.Cog):
                 nick = tmpl.safe_substitute(index=idx)
                 if member.top_role >= ctx.guild.me.top_role:
                     not_changed.append(
-                        f"{member} - Member's top role is not lower than mine."
+                        f"{member} (would be: {nick})"
+                        " - Member's top role is not lower than mine."
                     )
                     continue
                 original_nick = member.nick
@@ -87,7 +88,7 @@ class AprilFoolsRenamer(commands.Cog):
                     await member.edit(nick=nick, reason="April Fools joke")
                 except discord.HTTPException as exc:
                     not_changed.append(
-                        f"{member} - An unexpected error occurred"
+                        f"{member} (would be: {nick}) - An unexpected error occurred"
                         f" when trying to edit member's nickname: {exc}"
                     )
                 else:
