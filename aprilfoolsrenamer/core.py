@@ -5,7 +5,7 @@ import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
-from redbot.core.utils import inline
+from redbot.core.utils.chat_formatting import inline
 
 
 class AprilFoolsRenamer(commands.Cog):
