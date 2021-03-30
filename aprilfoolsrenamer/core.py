@@ -40,7 +40,7 @@ class AprilFoolsRenamer(commands.Cog):
         if len(tmpl.safe_substitute(index=len(ctx.guild.members))) > 32:
             await ctx.send("Nickname is too long!")
             return
-        await self.config.guild(ctx.guild).nick_template.set(tmpl)
+        await self.config.guild(ctx.guild).nick_template.set(nick_template)
         nick = tmpl.safe_substitute(index=len(ctx.guild.members))
         await ctx.send(f"Nickname template set! Here's an example nickname: {nick}")
 
