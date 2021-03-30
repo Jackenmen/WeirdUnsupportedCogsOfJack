@@ -205,6 +205,9 @@ class NewContributorsMixin(MixinMeta):
                     login_id_map[author_data["username"]] = user_id
                     if user_id in pending_contributors:
                         new_pending_contributors.pop(user_id, None)
+                    elif user_id in added_contributors:
+                        new_pending_contributors.pop(user_id, None)
+                        continue
                     pending_contributors[user_id] = author_data
 
         await self.new_pending_contributors_notify(new_pending_contributors)
