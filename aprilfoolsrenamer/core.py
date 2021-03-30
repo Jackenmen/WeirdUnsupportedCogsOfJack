@@ -6,7 +6,7 @@ import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
-from redbot.core.utils.chat_formatting import inline
+from redbot.core.utils.chat_formatting import inline, pagify
 
 
 log = logging.getLogger("red.weirdjack.aprilfoolsrenamer")
@@ -134,7 +134,8 @@ class AprilFoolsRenamer(commands.Cog):
         if not_changed:
             msg += "Nicknames of these users have not been updated:"
             msg += "\n".join(not_changed)
-        await ctx.send(msg)
+        for page in pagify(msg):
+            await ctx.send(page)
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
