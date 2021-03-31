@@ -104,9 +104,9 @@ class AprilFoolsRenamer(commands.Cog):
                 else:
                     await self.config.member(member).original_nick.set(original_nick)
 
-        msg = "Nicknames updated!"
+        msg = "Nicknames updated!\n"
         if not_changed:
-            msg += "Nicknames of these users have not been updated:"
+            msg += "Nicknames of these users have not been updated:\n"
             msg += "\n".join(not_changed)
         await ctx.send(msg)
 
