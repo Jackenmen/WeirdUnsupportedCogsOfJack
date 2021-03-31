@@ -84,7 +84,10 @@ class AprilFoolsRenamer(commands.Cog):
                         " - Member is set to be excluded from renaming."
                     )
                     continue
-                if member.top_role >= ctx.guild.me.top_role:
+                if (
+                    member.top_role >= ctx.guild.me.top_role
+                    and member is not ctx.guild.me
+                ):
                     not_changed.append(
                         f"{member} (would be: {nick})"
                         " - Member's top role is not lower than mine."
@@ -120,7 +123,10 @@ class AprilFoolsRenamer(commands.Cog):
                 original_nick = await self.config.member(member).original_nick()
                 if original_nick is False:
                     continue
-                if member.top_role >= ctx.guild.me.top_role:
+                if (
+                    member.top_role >= ctx.guild.me.top_role
+                    and member is not ctx.guild.me
+                ):
                     not_changed.append(
                         f"{member} - Member's top role is not lower than mine."
                     )
