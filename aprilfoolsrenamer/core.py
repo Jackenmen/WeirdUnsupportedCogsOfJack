@@ -19,7 +19,7 @@ class AprilFoolsRenamer(commands.Cog):
         self.config = Config.get_conf(self, 176070082584248320, force_registration=True)
         # this is `False` rather than `None`
         # because `None` is a valid value for nickname
-        self.config.register_guild(nick_template=None)
+        self.config.register_guild(nick_template=None, rename_exclusions=[])
         self.config.register_member(original_nick=False)
 
     @commands.guild_only()
@@ -72,11 +72,18 @@ class AprilFoolsRenamer(commands.Cog):
             return
 
         members = sorted(ctx.guild.members, key=lambda m: m.joined_at)
+        rename_exclusions = await self.config.guild(ctx.guild).rename_exclusions()
 
         not_changed = []
         async with ctx.typing():
             for idx, member in enumerate(members, start=1):
                 nick = tmpl.safe_substitute(index=idx)
+                if member.id in rename_exclusions:
+                    not_changed.append(
+                        f"{member} (would be: {nick})"
+                        " - Member is set to be excluded from renaming."
+                    )
+                    continue
                 if member.top_role >= ctx.guild.me.top_role:
                     not_changed.append(
                         f"{member} (would be: {nick})"
@@ -136,6 +143,34 @@ class AprilFoolsRenamer(commands.Cog):
             msg += "\n".join(not_changed)
         for page in pagify(msg):
             await ctx.send(page)
+
+    @commands.guild_only()
+    @commands.admin()
+    @commands.command()
+    async def renameexclude(
+        self, ctx: commands.GuildContext, member: discord.Member
+    ) -> None:
+        """Exclude the given member from the renaming in `[p]renameall`."""
+        async with self.config.guild(ctx.guild).rename_exclusions() as rename_exclusions:
+            if member.id in rename_exclusions:
+                await ctx.send("This member is already excluded from renaming!")
+                return
+            rename_exclusions.append(member.id)
+        await ctx.send("The given member is now excluded from renaming.")
+
+    @commands.guild_only()
+    @commands.admin()
+    @commands.command()
+    async def renameinclude(
+        self, ctx: commands.GuildContext, member: discord.Member
+    ) -> None:
+        """Include the given member from the renaming in `[p]renameall`."""
+        async with self.config.guild(ctx.guild).rename_exclusions() as rename_exclusions:
+            if member.id not in rename_exclusions:
+                await ctx.send("This member is already included in renaming!")
+                return
+            rename_exclusions.remove(member.id)
+        await ctx.send("The given member is now included in renaming.")
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member) -> None:
