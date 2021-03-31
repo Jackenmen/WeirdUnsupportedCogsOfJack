@@ -137,9 +137,9 @@ class AprilFoolsRenamer(commands.Cog):
                 else:
                     await self.config.member(member).original_nick.clear()
 
-        msg = "Nicknames updated!"
+        msg = "Nicknames updated!\n"
         if not_changed:
-            msg += "Nicknames of these users have not been updated:"
+            msg += "Nicknames of these users have not been updated:\n"
             msg += "\n".join(not_changed)
         for page in pagify(msg):
             await ctx.send(page)
