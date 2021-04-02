@@ -34,6 +34,7 @@ class AprilFoolsRenamer(commands.Cog):
         Leave empty to disable (to reverse `[p]renameall`, you still need to use `[p]revertnicks`)
         """
         if nick_template is None:
+            await self.config.guild(ctx.guild).nick_template.clear()
             command = inline(f"{ctx.clean_prefix}revertnicks")
             await ctx.send(
                 "Auto-renaming disabled."
