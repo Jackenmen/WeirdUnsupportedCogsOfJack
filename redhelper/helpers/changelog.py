@@ -205,7 +205,7 @@ class ChangelogMixin(MixinMeta):
             async with self.session.post(
                 "https://api.github.com/graphql",
                 json={
-                    "query": GET_MILESTONE_CONTRIBUTORS_QUERY,
+                    "query": GET_COMMIT_HISTORY_QUERY,
                     "variables": {
                         "since": committedDate,
                         "after": after,
