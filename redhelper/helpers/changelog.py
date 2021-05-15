@@ -259,7 +259,7 @@ class ChangelogMixin(MixinMeta):
                 parts.extend(commits)
             embed.add_field(
                 name="Commits with different milestone",
-                value="\n".join(commits_with_different_milestone),
+                value="\n".join(parts),
                 inline=False,
             )
         await ctx.send(embed=embed)
