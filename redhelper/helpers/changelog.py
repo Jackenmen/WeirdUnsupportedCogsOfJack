@@ -1,4 +1,5 @@
 import logging
+import re
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, List, Literal, Tuple
 
@@ -14,6 +15,7 @@ from ..abc import MixinMeta
 
 log = logging.getLogger("red.weirdjack.redhelper.helpers.changelog")
 
+RED_GH_URL = "https://github.com/Cog-Creators/Red-DiscordBot"
 GITHUB_USERS = "GITHUB_USERS"
 GET_MILESTONE_CONTRIBUTORS_QUERY = """
 query getMilestoneContributors(
@@ -103,6 +105,7 @@ query getCommitHistory($after: String, $since: GitTimestamp) {
         ... on Commit {
           history(first: 100, since: $since, after: $after) {
             nodes {
+              oid
               abbreviatedOid
               messageHeadline
               associatedPullRequests(first: 1) {
@@ -157,6 +160,13 @@ else:
                     "Valid label names are: `pending`, `skipped`, `added`."
                 )
             return argument
+
+
+LINKIFY_PR_REFS_RE = re.compile(r"#(\d+)")
+
+
+def linkify_pr_refs(text: str) -> str:
+    return LINKIFY_PR_REFS_RE.sub(rf"[\0]({RED_GH_URL}/issues/\1)", text)
 
 
 class ChangelogMixin(MixinMeta):
@@ -232,7 +242,9 @@ class ChangelogMixin(MixinMeta):
                         ]
                     if commits is not None:
                         commits.append(
-                            f"- {node['abbreviatedOid']} - {node['messageHeadline']}"
+                            f"- [{node['abbreviatedOid']}]"
+                            f"({RED_GH_URL}/commits/{node['oid']})"
+                            f" - {linkify_pr_refs(node['messageHeadline'])}"
                         )
 
                 page_info = history["pageInfo"]
