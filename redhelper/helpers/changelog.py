@@ -244,7 +244,7 @@ class ChangelogMixin(MixinMeta):
                         commits.append(
                             f"- [{node['abbreviatedOid']}]"
                             f"({RED_GH_URL}/commits/{node['oid']})"
-                            f" - {linkify_pr_refs(node['messageHeadline'])}"
+                            f" - {node['messageHeadline']}"
                         )
 
                 page_info = history["pageInfo"]
