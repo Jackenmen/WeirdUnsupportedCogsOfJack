@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, List, Literal, Tuple
 
 import discord
@@ -199,7 +200,7 @@ class ChangelogMixin(MixinMeta):
         has_next_page = True
         commits_without_pr: List[str] = []
         commits_with_no_milestone: List[str] = []
-        commits_with_different_milestone: Dict[str, List[str]] = {}
+        commits_with_different_milestone: Dict[str, List[str]] = defaultdict(list)
         while has_next_page:
             async with self.session.post(
                 "https://api.github.com/graphql",
@@ -229,12 +230,34 @@ class ChangelogMixin(MixinMeta):
                         ]
                     if commits is not None:
                         commits.append(
-                            f"{node['abbreviatedOid']} - {node['messageHeadline']}"
+                            f"- {node['abbreviatedOid']} - {node['messageHeadline']}"
                         )
 
                 page_info = history["pageInfo"]
                 after = page_info["endCursor"]
                 has_next_page = page_info["hasNextPage"]
+
+        embed = discord.Embed(title=f"Unreleased commits without {milestone} milestone")
+        if commits_without_pr:
+            embed.add_field(
+                name="Commits without associated PR",
+                value="\n".join(commits_without_pr),
+            )
+        if commits_with_no_milestone:
+            embed.add_field(
+                name="Commits with no milestone",
+                value="\n".join(commits_with_no_milestone),
+            )
+        if commits_with_different_milestone:
+            parts = []
+            for milestone_title, commits in commits_with_different_milestone.items():
+                parts.append(f"**{milestone_title}**")
+                parts.extend(commits)
+            embed.add_field(
+                name="Commits with different milestone",
+                value="\n".join(commits_with_different_milestone),
+            )
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def getcontributors(
