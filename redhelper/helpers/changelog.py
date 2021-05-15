@@ -244,11 +244,13 @@ class ChangelogMixin(MixinMeta):
             embed.add_field(
                 name="Commits without associated PR",
                 value="\n".join(commits_without_pr),
+                inline=False,
             )
         if commits_with_no_milestone:
             embed.add_field(
                 name="Commits with no milestone",
                 value="\n".join(commits_with_no_milestone),
+                inline=False,
             )
         if commits_with_different_milestone:
             parts = []
@@ -258,6 +260,7 @@ class ChangelogMixin(MixinMeta):
             embed.add_field(
                 name="Commits with different milestone",
                 value="\n".join(commits_with_different_milestone),
+                inline=False,
             )
         await ctx.send(embed=embed)
 
