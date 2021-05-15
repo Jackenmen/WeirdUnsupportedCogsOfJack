@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List, Literal
+from typing import TYPE_CHECKING, Dict, List, Literal, Tuple
 
 import discord
 from redbot.core import commands
@@ -77,6 +77,53 @@ LABEL_NAMES_TO_IDS = {
     "added": "MDU6TGFiZWwxOTIxMDcxNzgw",
 }
 
+GET_LATEST_TAGGED_COMMIT_QUERY = """
+query getLatestTag {
+  repository(owner: "Cog-Creators", name: "Red-DiscordBot") {
+    refs(refPrefix: "refs/tags/", last: 1) {
+      nodes {
+        name
+        target {
+          ... on Commit {
+            oid
+            committedDate
+          }
+        }
+      }
+    }
+  }
+}
+"""
+GET_COMMIT_HISTORY_QUERY = """
+query getCommitHistory($after: String, $since: GitTimestamp) {
+  repository(owner: "Cog-Creators", name: "Red-DiscordBot") {
+    defaultBranchRef {
+      target {
+        ... on Commit {
+          history(first: 100, since: $since, after: $after) {
+            nodes {
+              abbreviatedOid
+              messageHeadline
+              associatedPullRequests(first: 1) {
+                nodes {
+                  milestone {
+                    title
+                  }
+                }
+              }
+            }
+            pageInfo {
+              endCursor
+              hasNextPage
+            }
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
 
 def get_rst_string(display_name: str, github_username: str) -> str:
     if display_name == github_username:
@@ -130,6 +177,64 @@ class ChangelogMixin(MixinMeta):
     async def get_name(self, github_username: str) -> str:
         group = self.gh_user_config(github_username)
         return await group.display_name() or github_username
+
+    @commands.command()
+    async def getunreleasedcommits(self, ctx: commands.Context, milestone: str) -> None:
+        """
+        Get commits that were not released yet
+        and might need to be put in the given milestone.
+        """
+        token = (await self.bot.get_shared_api_tokens("github")).get("token", "")
+
+        async with self.session.post(
+            "https://api.github.com/graphql",
+            json={"query": GET_LATEST_TAGGED_COMMIT_QUERY},
+            headers={"Authorization": f"Bearer {token}"},
+        ) as resp:
+            json = await resp.json()
+            tag_target = json["data"]["repository"]["refs"]["nodes"][0]["target"]
+            committedDate = tag_target["committedDate"]
+
+        after = None
+        has_next_page = True
+        commits_without_pr: List[str] = []
+        commits_with_no_milestone: List[str] = []
+        commits_with_different_milestone: Dict[str, List[str]] = {}
+        while has_next_page:
+            async with self.session.post(
+                "https://api.github.com/graphql",
+                json={
+                    "query": GET_MILESTONE_CONTRIBUTORS_QUERY,
+                    "variables": {
+                        "since": committedDate,
+                        "after": after,
+                    },
+                },
+                headers={"Authorization": f"Bearer {token}"},
+            ) as resp:
+                json = await resp.json()
+                data = json["data"]
+                history = data["repository"]["defaultBranchRef"]["target"]["history"]
+
+                for node in history["nodes"]:
+                    commits: Optional[List[str]] = None
+                    associated_pr = next(node["associatedPullRequests"]["nodes"], None)
+                    if associated_pr is None:
+                        commits = commits_without_pr
+                    elif (milestone_data := associated_pr["milestone"]) is None:
+                        commits = commits_with_no_milestone
+                    elif milestone_data["title"] != milestone:
+                        commits = commits_with_different_milestone[
+                            milestone_data["title"]
+                        ]
+                    if commits is not None:
+                        commits.append(
+                            f"{node['abbreviatedOid']} - {node['messageHeadline']}"
+                        )
+
+                page_info = history["pageInfo"]
+                after = page_info["endCursor"]
+                has_next_page = page_info["hasNextPage"]
 
     @commands.command()
     async def getcontributors(
