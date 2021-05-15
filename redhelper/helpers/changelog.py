@@ -219,7 +219,9 @@ class ChangelogMixin(MixinMeta):
 
                 for node in history["nodes"]:
                     commits: Optional[List[str]] = None
-                    associated_pr = next(node["associatedPullRequests"]["nodes"], None)
+                    associated_pr = next(
+                        iter(node["associatedPullRequests"]["nodes"]), None
+                    )
                     if associated_pr is None:
                         commits = commits_without_pr
                     elif (milestone_data := associated_pr["milestone"]) is None:
