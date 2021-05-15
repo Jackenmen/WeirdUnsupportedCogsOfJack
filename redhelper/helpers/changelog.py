@@ -242,9 +242,7 @@ class ChangelogMixin(MixinMeta):
                         ]
                     if commits is not None:
                         commits.append(
-                            f"- [{node['abbreviatedOid']}]"
-                            f"({RED_GH_URL}/commits/{node['oid']})"
-                            f" - {node['messageHeadline']}"
+                            f"- {node['abbreviatedOid']} - {node['messageHeadline']}"
                         )
 
                 page_info = history["pageInfo"]
