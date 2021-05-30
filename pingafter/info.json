@@ -1,0 +1,16 @@
+{
+    "name": "PingAfter",
+    "short": "WHAT THE FUCK BOT!? YOU FINISHED WHILE I WAS NOT LOOKING!? Say nothing more, PingAfter will ping you so that you know!",
+    "description": "You run a command. You wait for the command to finish. Well, you wait quite a long time. Hmm, it doesn't seem like it's gonna finish any time soon. You go make a coffee. You're back with a coffee. WHAT THE FUCK BOT!? YOU FINISHED WHILE I WAS GONE!? You could nuke your bot into oblivion for being so rude to you, but I do have an alternative! *This cog* can make your bot be forced to ping you after the command you ran sends a message back to you. No more long staring or forgetting that you ran the command!",
+    "install_msg": "Oh, em, gee! Thanks Jack! Now I'm going to be forced to ping the command's caller if they tell me to. You're no fun, fucking virgin :|",
+    "author": [
+        "jack1142 (Jackenmen#6607)"
+    ],
+    "required_cogs": {},
+    "requirements": [],
+    "tags": [],
+    "min_bot_version": "3.4.10",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG"
+}
