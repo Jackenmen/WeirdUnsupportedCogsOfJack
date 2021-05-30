@@ -27,11 +27,11 @@ class PingSendInfo:
 
 
 @functools.wraps(real_send)
-async def send(*args, **kwargs):
+async def send(self, *args, **kwargs):
     info = _ctx_var.get()
     if info is not None and info.dec():
-        await real_send(info.mention)
-    return await real_send(*args, **kwargs)
+        await real_send(self, info.mention)
+    return await real_send(self, *args, **kwargs)
 
 
 class PingAfter(commands.Cog):
