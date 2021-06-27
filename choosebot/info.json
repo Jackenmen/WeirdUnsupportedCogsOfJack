@@ -1,0 +1,16 @@
+{
+    "name": "ChooseBot",
+    "short": "Mixing up names of your girlfriends can end up badly but so does mixing up prefixes!",
+    "description": "This cog can't help you when you mix up names of your girlfriends but it can help you when you use the prefix of a different instance!",
+    "install_msg": "Thanks for installing ChooseBot. Mixing up names of your girlfriends can end up badly but so does mixing up prefixes so let's finally fix that!",
+    "author": [
+        "jack1142 (Jackenmen#6607)"
+    ],
+    "required_cogs": {},
+    "requirements": [],
+    "tags": [],
+    "min_bot_version": "3.4.12",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG"
+}
