@@ -238,9 +238,12 @@ class NewContributorsMixin(MixinMeta):
             ]
             for channel in output_channels:
                 prefixes = await self.bot.get_valid_prefixes(channel.guild)
-                command = inline(
-                    f"{prefixes[0]}newcontributors add {username} <member>"
+                prefix = re.sub(
+                    rf"<@!?{self.bot.user.id}>",
+                    f"@{self.bot.user.name}".replace("\\", r"\\"),
+                    prefixes[0],
                 )
+                command = inline(f"{prefix}newcontributors add {username} <member>")
                 embed.set_footer(
                     text=f"Use {command} to map the contributor to server member."
                 )
