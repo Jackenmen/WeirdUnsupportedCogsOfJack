@@ -33,7 +33,6 @@ class SmileySlash(commands.Cog):
     async def on_interaction_create(self, data: Dict[str, Any]) -> None:
         channel_id = int(data["channel_id"])
         combo = self.channels.setdefault(channel_id, 1)
-        self.channels[channel_id] = combo + 1
         async with self.bot.http._HTTPClient__session.post(
             f"{API_URL}/interactions/{data['id']}/{data['token']}/callback",
             json={
@@ -44,6 +43,7 @@ class SmileySlash(commands.Cog):
             },
         ):
             pass
+        self.channels[channel_id] = combo + 1
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
