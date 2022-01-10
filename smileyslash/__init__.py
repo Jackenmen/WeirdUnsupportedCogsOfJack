@@ -51,6 +51,6 @@ class SmileySlash(commands.Cog):
 
 
 async def setup(bot: Red) -> None:
-    cog = SmileySlash()
+    cog = SmileySlash(bot)
     bot.add_cog(cog)
     await cog.initialize()
