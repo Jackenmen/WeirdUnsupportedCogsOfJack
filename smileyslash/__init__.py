@@ -31,7 +31,7 @@ class SmileySlash(commands.Cog):
 
     @commands.Cog.listener()
     async def on_interaction_create(self, data: Dict[str, Any]) -> None:
-        channel_id = data["channel_id"]
+        channel_id = int(data["channel_id"])
         combo = self.channels.setdefault(channel_id, 1)
         async with self.bot.http._HTTPClient__session.post(
             f"{API_URL}/interactions/{data['id']}/{data['token']}/callback",
