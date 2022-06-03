@@ -10,7 +10,7 @@
     "requirements": [],
     "tags": [],
     "min_bot_version": "3.4.16",
-    "max_bot_version": "3.5.0.dev0",
+    "max_bot_version": "3.5.0.dev172",
     "hidden": false,
     "disabled": false,
     "type": "COG"
