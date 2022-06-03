@@ -1,5 +1,7 @@
 import discord
 
+from .delegate import delegate
+
 
 DESCRIPTORS = [
     delegate(discord.abc.Messageable, "send"),
