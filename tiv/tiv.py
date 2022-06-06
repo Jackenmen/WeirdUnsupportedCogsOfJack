@@ -37,9 +37,9 @@ DESCRIPTORS = [
 
 def _tiv_load() -> None:
     for desc in DESCRIPTORS:
-        setattr(discord.VoiceChannel, desc.fget.__name__, desc)
+        setattr(discord.VoiceChannel, getattr(desc, "fget", desc).__name__, desc)
 
 
 def _tiv_unload() -> None:
     for desc in DESCRIPTORS:
-        delattr(discord.VoiceChannel, desc.fget.__name__)
+        delattr(discord.VoiceChannel, getattr(desc, "fget", desc).__name__)
