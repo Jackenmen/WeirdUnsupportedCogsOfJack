@@ -12,5 +12,5 @@ async def setup(bot: Red) -> None:
     _tiv_load()
 
 
-async def teardown(bot: Red) -> None:
+def teardown(bot: Red) -> None:
     _tiv_unload()
