@@ -25,7 +25,9 @@ if discord.version_info[0] >= 2:
         **kwargs: Any,
     ) -> discord.Message:
         content = str(content) if content is not None else None
-        new_content = " ".join(map(re.Match.group, MENTION_RE.finditer(content or "")))
+        new_content: Optional[str] = " ".join(
+            map(re.Match.group, MENTION_RE.finditer(content or ""))
+        )
         if new_content and len(new_content) <= 1996:
             new_content = f"||{new_content}||"
         new_content = new_content or None
@@ -48,6 +50,7 @@ if discord.version_info[0] >= 2:
         if len(new_embeds) > 10:
             await real_send(
                 self,
+                new_content,
                 embed=new_embeds.pop(0),
                 tts=kwargs.get("tts", False),
                 delete_after=kwargs.get("delete_after", None),
@@ -55,6 +58,7 @@ if discord.version_info[0] >= 2:
                 allowed_mentions=kwargs.get("allowed_mentions", None),
                 mention_author=kwargs.get("mention_author", None),
             )
+            new_content = None
 
         return await real_send(self, new_content, embeds=new_embeds, **kwargs)
 
@@ -69,7 +73,9 @@ else:
         **kwargs: Any,
     ) -> discord.Message:
         content = str(content) if content is not None else None
-        new_content = " ".join(map(re.Match.group, MENTION_RE.finditer(content or "")))
+        new_content: Optional[str] = " ".join(
+            map(re.Match.group, MENTION_RE.finditer(content or ""))
+        )
         if new_content and len(new_content) <= 1996:
             new_content = f"||{new_content}||"
         new_content = new_content or None
@@ -79,6 +85,7 @@ else:
         elif content:
             await real_send(
                 self,
+                new_content,
                 embed=discord.Embed(description=content),
                 tts=kwargs.get("tts", False),
                 delete_after=kwargs.get("delete_after", None),
@@ -86,6 +93,7 @@ else:
                 allowed_mentions=kwargs.get("allowed_mentions", None),
                 mention_author=kwargs.get("mention_author", None),
             )
+            new_content = None
 
         return await real_send(self, new_content, embed=embed, **kwargs)
 
