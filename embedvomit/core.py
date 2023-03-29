@@ -54,9 +54,11 @@ if discord.version_info[0] >= 2:
                 embed=new_embeds.pop(0),
                 tts=kwargs.get("tts", False),
                 delete_after=kwargs.get("delete_after", None),
-                reference=kwargs.pop("reference", None),
                 allowed_mentions=kwargs.get("allowed_mentions", None),
+                reference=kwargs.pop("reference", None),
                 mention_author=kwargs.get("mention_author", None),
+                suppress_embeds=kwargs.get("suppress_embeds", False),
+                silent=kwargs.get("silent", False),
             )
             new_content = None
 
