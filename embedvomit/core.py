@@ -1,4 +1,5 @@
 import functools
+import re
 from typing import Any, Optional, Sequence
 
 import discord
@@ -8,6 +9,7 @@ from redbot.core.bot import Red
 from redbot.core.config import Config
 
 
+MENTION_RE = re.compile(r"<@[!&]?[0-9]{15,20}>|@everyone|@here")
 real_send = Messageable.send
 
 
@@ -23,6 +25,10 @@ if discord.version_info[0] >= 2:
         **kwargs: Any,
     ) -> discord.Message:
         content = str(content) if content is not None else None
+        new_content = " ".join(map(re.Match.group, MENTION_RE.finditer(content or "")))
+        if new_content and len(new_content) <= 1996:
+            new_content = f"||{new_content}||"
+        new_content = new_content or None
 
         if embed is not None and embeds is not None:
             raise TypeError("Cannot mix embed and embeds keyword arguments.")
@@ -50,7 +56,7 @@ if discord.version_info[0] >= 2:
                 mention_author=kwargs.get("mention_author", None),
             )
 
-        return await real_send(self, None, embeds=new_embeds, **kwargs)
+        return await real_send(self, new_content, embeds=new_embeds, **kwargs)
 
 else:
 
@@ -63,6 +69,10 @@ else:
         **kwargs: Any,
     ) -> discord.Message:
         content = str(content) if content is not None else None
+        new_content = " ".join(map(re.Match.group, MENTION_RE.finditer(content or "")))
+        if new_content and len(new_content) <= 1996:
+            new_content = f"||{new_content}||"
+        new_content = new_content or None
 
         if embed is None:
             embed = discord.Embed(description=content or "\u200b")
@@ -77,7 +87,7 @@ else:
                 mention_author=kwargs.get("mention_author", None),
             )
 
-        return await real_send(self, None, embed=embed, **kwargs)
+        return await real_send(self, new_content, embed=embed, **kwargs)
 
 
 class EmbedVomit(commands.Cog):
