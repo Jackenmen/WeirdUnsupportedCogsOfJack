@@ -1,0 +1,16 @@
+{
+    "name": "EmbedVomit",
+    "short": "A cog for people whose love for embeds has no limits.",
+    "description": "Have you ever wanted your bot to vomit embeds any occassion they get? With this cog you can! It shines with its one and only command `[p]embedvomit` making your bot send embeds in every message.",
+    "install_msg": "Thanks for installing EmbedVomit. Let's turn your boring messages into messages full of ~~love~~ lovely embeds!",
+    "author": [
+        "Jakub Kuczys (Jackenmen#6607)"
+    ],
+    "required_cogs": {},
+    "requirements": [],
+    "tags": [],
+    "min_bot_version": "3.4.18",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG"
+}
