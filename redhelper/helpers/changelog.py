@@ -8,7 +8,7 @@ from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.commands import NoParseOptional as Optional
 from redbot.core.config import Config, Group
-from redbot.core.utils.chat_formatting import box, humanize_list
+from redbot.core.utils.chat_formatting import box, humanize_list, text_to_file
 
 from ..abc import MixinMeta
 
@@ -249,30 +249,20 @@ class ChangelogMixin(MixinMeta):
                 after = page_info["endCursor"]
                 has_next_page = page_info["hasNextPage"]
 
-        embed = discord.Embed(title=f"Unreleased commits without {milestone} milestone")
+        parts = []
+        parts.append(f"# Unreleased commits without {milestone} milestone")
         if commits_without_pr:
-            embed.add_field(
-                name="Commits without associated PR",
-                value="\n".join(commits_without_pr),
-                inline=False,
-            )
+            parts.append("\n## Commits without associated PR\n")
+            parts.append("\n".join(commits_without_pr))
         if commits_with_no_milestone:
-            embed.add_field(
-                name="Commits with no milestone",
-                value="\n".join(commits_with_no_milestone),
-                inline=False,
-            )
+            parts.append("\n## Commits with no milestone\n")
+            parts.append("\n".join(commits_with_no_milestone))
         if commits_with_different_milestone:
-            parts = []
+            parts.append("\n## Commits with different milestone\n")
             for milestone_title, commits in commits_with_different_milestone.items():
-                parts.append(f"**{milestone_title}**")
+                parts.append(f"\n### {milestone_title}\n")
                 parts.extend(commits)
-            embed.add_field(
-                name="Commits with different milestone",
-                value="\n".join(parts),
-                inline=False,
-            )
-        await ctx.send(embed=embed)
+        await ctx.send(file=text_to_file("\n".join(parts), filename="unreleased_commits.md"))
 
     @commands.command()
     async def getcontributors(
