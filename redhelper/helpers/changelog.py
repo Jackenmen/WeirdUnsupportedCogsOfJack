@@ -170,7 +170,7 @@ LINKIFY_PR_REFS_RE = re.compile(r"#(\d+)")
 
 
 def linkify_pr_refs(text: str) -> str:
-    return LINKIFY_PR_REFS_RE.sub(rf"[\0]({RED_GH_URL}/issues/\1)", text)
+    return LINKIFY_PR_REFS_RE.sub(rf"[\g<0>]({RED_GH_URL}/issues/\1)", text)
 
 
 class ChangelogMixin(MixinMeta):
