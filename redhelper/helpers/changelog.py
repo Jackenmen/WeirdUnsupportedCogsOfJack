@@ -80,16 +80,20 @@ LABEL_NAMES_TO_IDS = {
     "added": "MDU6TGFiZWwxOTIxMDcxNzgw",
 }
 
-GET_LATEST_TAGGED_COMMIT_QUERY = """
-query getLatestTag {
+# technically not *all* but enough for what we use it for
+GET_ALL_TAG_COMMITS_QUERY = """
+query getAllTagCommits {
   repository(owner: "Cog-Creators", name: "Red-DiscordBot") {
-    refs(refPrefix: "refs/tags/", last: 1) {
+    refs(
+        refPrefix: "refs/tags/"
+        orderBy: {direction: DESC, field: TAG_COMMIT_DATE}
+        first: 100
+    ) {
       nodes {
         name
         target {
           ... on Commit {
             oid
-            committedDate
           }
         }
       }
@@ -98,12 +102,12 @@ query getLatestTag {
 }
 """
 GET_COMMIT_HISTORY_QUERY = """
-query getCommitHistory($after: String, $since: GitTimestamp) {
+query getCommitHistory($refQualifiedName: String!, $after: String) {
   repository(owner: "Cog-Creators", name: "Red-DiscordBot") {
-    defaultBranchRef {
+    ref(qualifiedName: $refQualifiedName) {
       target {
         ... on Commit {
-          history(first: 100, since: $since, after: $after) {
+          history(first: 100, after: $after) {
             nodes {
               oid
               abbreviatedOid
@@ -190,7 +194,9 @@ class ChangelogMixin(MixinMeta):
         return await group.display_name() or github_username
 
     @commands.command()
-    async def getunreleasedcommits(self, ctx: commands.Context, milestone: str) -> None:
+    async def getunreleasedcommits(
+        self, ctx: commands.Context, milestone: str, branch: str = "V3/develop"
+    ) -> None:
         """
         Get commits that were not released yet
         and might need to be put in the given milestone.
@@ -199,12 +205,14 @@ class ChangelogMixin(MixinMeta):
 
         async with self.session.post(
             "https://api.github.com/graphql",
-            json={"query": GET_LATEST_TAGGED_COMMIT_QUERY},
+            json={"query": GET_ALL_TAG_COMMITS_QUERY},
             headers={"Authorization": f"Bearer {token}"},
         ) as resp:
             json = await resp.json()
-            tag_target = json["data"]["repository"]["refs"]["nodes"][0]["target"]
-            committedDate = tag_target["committedDate"]
+            tag_commits = {
+                node["target"]["oid"]: node["name"]
+                for node in json["data"]["repository"]["refs"]["nodes"]
+            }
 
         after = None
         has_next_page = True
@@ -217,17 +225,21 @@ class ChangelogMixin(MixinMeta):
                 json={
                     "query": GET_COMMIT_HISTORY_QUERY,
                     "variables": {
-                        "since": committedDate,
                         "after": after,
+                        "refQualifiedName": f"refs/heads/{branch}",
                     },
                 },
                 headers={"Authorization": f"Bearer {token}"},
             ) as resp:
                 json = await resp.json()
                 data = json["data"]
-                history = data["repository"]["defaultBranchRef"]["target"]["history"]
+                history = data["repository"]["ref"]["target"]["history"]
 
                 for node in history["nodes"]:
+                    maybe_tag_name = tag_commits.get(node["oid"])
+                    if maybe_tag_name is not None:
+                        has_next_page = False
+                        break
                     commits: Optional[List[str]] = None
                     associated_pr = next(
                         iter(node["associatedPullRequests"]["nodes"]), None
@@ -244,10 +256,10 @@ class ChangelogMixin(MixinMeta):
                         commits.append(
                             f"- {node['abbreviatedOid']} - {node['messageHeadline']}"
                         )
-
-                page_info = history["pageInfo"]
-                after = page_info["endCursor"]
-                has_next_page = page_info["hasNextPage"]
+                else:
+                    page_info = history["pageInfo"]
+                    after = page_info["endCursor"]
+                    has_next_page = page_info["hasNextPage"]
 
         parts = []
         parts.append(f"# Unreleased commits without {milestone} milestone")
