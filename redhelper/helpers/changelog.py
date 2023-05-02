@@ -201,6 +201,15 @@ class ChangelogMixin(MixinMeta):
         Get commits that were not released yet
         and might need to be put in the given milestone.
         """
+        async with ctx.typing():
+            text = await self._get_unreleased_commits_impl(
+                ctx, milestone=milestone, branch=branch
+            )
+        await ctx.send(file=text_to_file(text, filename="unreleased_commits.md"))
+
+    async def _get_unreleased_commits_impl(
+        self, ctx: commands.Context, *, milestone: str, branch: str
+    ) -> str:
         token = (await self.bot.get_shared_api_tokens("github")).get("token", "")
 
         async with self.session.post(
@@ -274,7 +283,7 @@ class ChangelogMixin(MixinMeta):
             for milestone_title, commits in commits_with_different_milestone.items():
                 parts.append(f"\n### {milestone_title}\n")
                 parts.extend(commits)
-        await ctx.send(file=text_to_file("\n".join(parts), filename="unreleased_commits.md"))
+        return "\n".join(parts)
 
     @commands.command()
     async def getcontributors(
