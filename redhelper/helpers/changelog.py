@@ -264,7 +264,7 @@ class ChangelogMixin(MixinMeta):
                     if commits is not None:
                         commits.append(
                             f"- [{node['abbreviatedOid']}]"
-                            f"({RED_GH_URL}/commits/{node['oid']})"
+                            f"({RED_GH_URL}/commit/{node['oid']})"
                             f" - {linkify_pr_refs(node['messageHeadline'])}"
                         )
                 else:
