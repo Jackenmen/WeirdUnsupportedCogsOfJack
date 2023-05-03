@@ -345,8 +345,8 @@ class ChangelogMixin(MixinMeta):
                 github_username: await self.get_name(github_username)
                 for github_username in (authors.keys() | reviewers.keys())
             }
-        total_pr_number = sum(len(pulls) for pull in authors.values())
-        total_review_number = sum(len(pulls) for pull in reviews.values())
+        total_pr_number = sum(len(pulls) for pulls in authors.values())
+        total_review_number = sum(len(pulls) for pulls in reviews.values())
 
         parts = []
         parts.append(f"# Contributor statistics for milestone {milestone}")
