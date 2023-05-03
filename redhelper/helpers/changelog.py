@@ -382,7 +382,7 @@ class ChangelogMixin(MixinMeta):
 
     async def _get_contributor_data(
         self, milestone: str, *, show_not_merged: bool = False
-    ) -> Tuple[str, Dict[str, list[Tuple[int, str]]], Dict[str, list[Tuple[int, str]]]]:
+    ) -> Tuple[str, Dict[str, List[Tuple[int, str]]], Dict[str, List[Tuple[int, str]]]]:
         after = None
         has_next_page = True
         authors = {}
