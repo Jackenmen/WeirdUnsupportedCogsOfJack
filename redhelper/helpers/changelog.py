@@ -346,6 +346,7 @@ class ChangelogMixin(MixinMeta):
                 for github_username in (authors.keys() | reviewers.keys())
             }
 
+        parts = []
         parts.append(f"# Contributor statistics for milestone {milestone}")
         parts.append("\n## Number of PRs authored\n")
         for author_name, pulls in sorted(authors.items(), key=lambda t: len(t[1]), reverse=True):
