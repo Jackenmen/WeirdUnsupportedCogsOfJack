@@ -345,39 +345,41 @@ class ChangelogMixin(MixinMeta):
                 github_username: await self.get_name(github_username)
                 for github_username in (authors.keys() | reviewers.keys())
             }
+        total_pr_number = sum(len(pulls) for pull in authors.values())
+        total_review_number = sum(len(pulls) for pull in reviews.values())
 
         parts = []
         parts.append(f"# Contributor statistics for milestone {milestone}")
-        parts.append("\n## Number of PRs authored\n")
+        parts.append(f"\n## Number of PRs authored ({total_pr_number})\n")
         for author_name, pulls in sorted(authors.items(), key=lambda t: len(t[1]), reverse=True):
             parts.append(
                 f"- [{contributor_names[author_name]}]"
                 f"(https://github.com/{author_name}) - {len(pulls)}"
             )
-        parts.append("\n## Number of PRs reviewed\n")
+        parts.append(f"\n## Number of reviews amongst all PRs ({total_review_number})\n")
         for author_name, pulls in sorted(reviewers.items(), key=lambda t: len(t[1]), reverse=True):
             parts.append(
                 f"- [{contributor_names[author_name]}]"
                 f"(https://github.com/{author_name}) - {len(pulls)}"
             )
 
-        parts.append("\n## List of PRs by author\n")
+        parts.append(f"\n## List of PRs by author ({total_review_number})\n")
         for author_name, pulls in sorted(authors.items(), key=lambda t: len(t[1]), reverse=True):
             parts.append(
                 f"- [{contributor_names[author_name]}]"
                 f"(https://github.com/{author_name}) - {len(pulls)}"
             )
             for number, title in pulls:
-                parts.append(f"    - [{title}]({RED_GH_URL}/pull/{number})")
+                parts.append(f"    - [{title} #{number}]({RED_GH_URL}/pull/{number})")
 
-        parts.append("\n## List of PRs by reviewer\n")
+        parts.append(f"\n## List of reviews by reviewer ({total_review_number})\n")
         for author_name, pulls in sorted(reviewers.items(), key=lambda t: len(t[1]), reverse=True):
             parts.append(
                 f"- [{contributor_names[author_name]}]"
                 f"(https://github.com/{author_name}) - {len(pulls)}"
             )
             for number, title in pulls:
-                parts.append(f"    - [{title}]({RED_GH_URL}/pull/{number})")
+                parts.append(f"    - [{title} #{number}]({RED_GH_URL}/pull/{number})")
 
         await ctx.send(file=text_to_file("\n".join(parts), filename="contributor_details.md"))
 
