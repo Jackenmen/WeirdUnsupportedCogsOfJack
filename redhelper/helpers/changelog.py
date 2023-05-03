@@ -324,6 +324,15 @@ class ChangelogMixin(MixinMeta):
                 )
             ),
         )
+        embed.add_field(
+            name="GitHub release formatted list",
+            value=box(
+                ", ".join(
+                    f"@{github_username}"
+                    for display_name, github_username in sorted_contributors
+                )
+            ),
+        )
 
         await ctx.send(embed=embed)
 
