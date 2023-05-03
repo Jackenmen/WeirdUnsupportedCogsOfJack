@@ -29,6 +29,8 @@ query getMilestoneContributors(
         title
         pullRequests(first: 100, after: $after, states: $states) {
           nodes {
+            title
+            number
             author {
               login
             }
@@ -297,9 +299,94 @@ class ChangelogMixin(MixinMeta):
         By default, this only shows PRs that have already been merged.
         You can pass True to `<show_not_merged>` to show both merged and not merged PRs.
         """
+        async with ctx.typing():
+            milestone_title, authors, reviewers = await self._get_contributor_data(
+                milestone, show_not_merged=show_not_merged
+            )
+            contributors_with_names = [
+                (await self.get_name(github_username), github_username)
+                for github_username in (authors.keys() | reviewers.keys())
+            ]
+
+        sorted_contributors = sorted(contributors_with_names, key=lambda t: t[0].lower())
+        embed = discord.Embed(
+            title=f"Contributors to milestone {milestone_title}",
+            description=", ".join(
+                map("[{0[0]}](https://github.com/{0[1]})".format, sorted_contributors)
+            ),
+        )
+        embed.add_field(
+            name="RST formatted list (with custom display names)",
+            value=box(
+                ", ".join(
+                    get_rst_string(display_name, github_username)
+                    for display_name, github_username in sorted_contributors
+                )
+            ),
+        )
+
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    async def getdetailedcontributors(
+        self, ctx: commands.Context, milestone: str, show_not_merged: bool = False
+    ) -> None:
+        """
+        Get contributors for the given milestone in Red's repo.
+
+        By default, this only shows PRs that have already been merged.
+        You can pass True to `<show_not_merged>` to show both merged and not merged PRs.
+        """
+        async with ctx.typing():
+            milestone_title, authors, reviewers = await self._get_contributor_data(
+                milestone, show_not_merged=show_not_merged
+            )
+            contributor_names = {
+                github_username: await self.get_name(github_username)
+                for github_username in (authors.keys() | reviewers.keys())
+            }
+
+        parts.append(f"# Contributor statistics for milestone {milestone}")
+        parts.append("\n## Number of PRs authored\n")
+        for author_name, pulls in sorted(authors.items(), key=lambda t: len(t[1]), reverse=True):
+            parts.append(
+                f"- [{contributor_names[author_name]}]"
+                f"(https://github.com/{author_name}) - {len(pulls)}"
+            )
+        parts.append("\n## Number of PRs reviewed\n")
+        for author_name, pulls in sorted(reviewers.items(), key=lambda t: len(t[1]), reverse=True):
+            parts.append(
+                f"- [{contributor_names[author_name]}]"
+                f"(https://github.com/{author_name}) - {len(pulls)}"
+            )
+
+        parts.append("\n## List of PRs by author\n")
+        for author_name, pulls in sorted(authors.items(), key=lambda t: len(t[1]), reverse=True):
+            parts.append(
+                f"- [{contributor_names[author_name]}]"
+                f"(https://github.com/{author_name}) - {len(pulls)}"
+            )
+            for number, title in pulls:
+                parts.append(f"    - [{title}]({RED_GH_URL}/pull/{number})")
+
+        parts.append("\n## List of PRs by reviewer\n")
+        for author_name, pulls in sorted(reviewers.items(), key=lambda t: len(t[1]), reverse=True):
+            parts.append(
+                f"- [{contributor_names[author_name]}]"
+                f"(https://github.com/{author_name}) - {len(pulls)}"
+            )
+            for number, title in pulls:
+                parts.append(f"    - [{title}]({RED_GH_URL}/pull/{number})")
+
+        await ctx.send(file=text_to_file("\n".join(parts), filename="contributor_details.md"))
+
+    async def _get_contributor_data(
+        self, milestone: str, *, show_not_merged: bool = False
+    ) -> Tuple[str, Dict[str, list[Tuple[int, str]]], Dict[str, list[Tuple[int, str]]]]:
         after = None
         has_next_page = True
-        authors = set()
+        authors = {}
+        reviewers = {}
         token = (await self.bot.get_shared_api_tokens("github")).get("token", "")
         states = ["MERGED"]
         if show_not_merged:
@@ -326,39 +413,19 @@ class ChangelogMixin(MixinMeta):
                 pull_requests = milestone_data["pullRequests"]
                 nodes = pull_requests["nodes"]
                 for pr_node in nodes:
-                    authors.add(pr_node["author"]["login"])
+                    pr_info = (pr_node["number"], pr_node["title"])
+                    pr_author = pr_node["author"]["login"]
+                    authors.setdefault(pr_author, []).append(pr_info)
                     reviews = pr_node["latestOpinionatedReviews"]["nodes"]
-                    authors.update(
-                        review_node["author"]["login"] for review_node in reviews
-                    )
+                    for review_node in reviews:
+                        review_author = review_node["author"]["login"]
+                        reviewers.setdefault(review_author, []).append(pr_info)
 
                 page_info = pull_requests["pageInfo"]
                 after = page_info["endCursor"]
                 has_next_page = page_info["hasNextPage"]
 
-        authors_with_names = [
-            (await self.get_name(github_username), github_username)
-            for github_username in authors
-        ]
-        sorted_authors = sorted(authors_with_names, key=lambda t: t[0].lower())
-
-        embed = discord.Embed(
-            title=f"Contributors to milestone {milestone_title}",
-            description=", ".join(
-                map("[{0[0]}](https://github.com/{0[1]})".format, sorted_authors)
-            ),
-        )
-        embed.add_field(
-            name="RST formatted list (with custom display names)",
-            value=box(
-                ", ".join(
-                    get_rst_string(display_name, github_username)
-                    for display_name, github_username in sorted_authors
-                )
-            ),
-        )
-
-        await ctx.send(embed=embed)
+        return milestone_title, authors, reviewers
 
     @commands.is_owner()
     @commands.command()
