@@ -1,0 +1,16 @@
+{
+    "name": "HeaderSend",
+    "short": "Do you have trouble reading responses sent by the bot? How about we make them bigger?",
+    "description": "Do you have sight problems? This may help! It will make the bot send all text using the markdown headers with this great cog!",
+    "install_msg": "Thanks for installing HeaderSend. Hope it helps you manage with your sight problems.",
+    "author": [
+        "Jakub Kuczys (https://github.com/Jackenmen)"
+    ],
+    "required_cogs": {},
+    "requirements": [],
+    "tags": [],
+    "min_bot_version": "3.4.19",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG"
+}
