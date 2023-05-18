@@ -54,7 +54,117 @@ FULL_MORE_LIST = MORE_LIST + [
 ]
 
 
-if discord.version_info[:2] >= (1, 6):
+if discord.version_info[0] >= 2:
+
+    async def get_msg_ref(
+        messageable: Messageable, emoji: str, *, smileysend_force_new_ref: bool = False
+    ) -> discord.MessageReference:
+        channel = await messageable._get_channel()
+        ref_data = CONFIG_CACHE.setdefault(str(channel.id), {}).setdefault(emoji, {})
+
+        if (
+            smileysend_force_new_ref
+            or (ref_msg_id := ref_data.get("message_id")) is None
+        ):
+            emoji_count = (2000 + 1) // (len(emoji) + 1)
+            ref_msg_content = " ".join(itertools.repeat(emoji, min(50, emoji_count)))
+            ref_msg = await real_send(messageable, ref_msg_content)
+
+            ref_data["message_id"] = ref_msg_id = ref_msg.id
+            scope = CONFIG.custom(MSG_IDS, str(channel.id), emoji).message_id
+            await scope.set(ref_msg_id)
+
+        return discord.MessageReference(message_id=ref_msg_id, channel_id=channel.id)
+
+    async def send_with_msg_ref(
+        messageable: Messageable,
+        content=None,
+        *,
+        reference=None,
+        smileysend_emoji,
+        smileysend_force_new_ref=False,
+        **kwargs,
+    ) -> discord.Message:
+        if reference is None and REPLIES_ENABLED:
+            reference = await get_msg_ref(
+                messageable,
+                smileysend_emoji,
+                smileysend_force_new_ref=smileysend_force_new_ref,
+            )
+        else:
+            smileysend_force_new_ref = True
+        try:
+            return await real_send(messageable, content, reference=reference, **kwargs)
+        except discord.HTTPException as e:
+            if (
+                not smileysend_force_new_ref
+                and e.code == 50035
+                and "In message_reference: Unknown message" in str(e)
+            ):
+                return await send_with_msg_ref(
+                    messageable,
+                    content,
+                    smileysend_emoji=smileysend_emoji,
+                    smileysend_force_new_ref=True,
+                    **kwargs,
+                )
+            raise
+
+    @functools.wraps(real_send)
+    async def send(
+        self,
+        content=None,
+        *,
+        tts=False,
+        embed=None,
+        embeds=None,
+        file=None,
+        files=None,
+        stickers=None,
+        delete_after=None,
+        nonce=None,
+        allowed_mentions=None,
+        reference=None,
+        mention_author=None,
+        view=None,
+        suppress_embeds=False,
+        silent=False,
+    ):
+        if isinstance(self, Context):
+            emojis = SPECIAL_AUTHOR_CASES.get(self.author.id, OMEGA)
+        else:
+            emojis = OMEGA
+        emoji = random.choice(emojis)
+        content = str(content) if content is not None else None
+        if content:
+            if len(content) >= (2000 - (len(emoji) + 1) * 2):
+                await real_send(self, emoji)
+            else:
+                content = f"{emoji} {content} {emoji}"
+        else:
+            content = emoji
+        return await send_with_msg_ref(
+            self,
+            content,
+            tts=tts,
+            embed=embed,
+            embeds=embeds,
+            file=file,
+            files=files,
+            stickers=stickers,
+            delete_after=delete_after,
+            nonce=nonce,
+            allowed_mentions=allowed_mentions,
+            reference=reference,
+            mention_author=mention_author,
+            view=view,
+            suppress_embeds=suppress_embeds,
+            silent=silent,
+            smileysend_emoji=emoji,
+        )
+
+
+elif discord.version_info[:2] >= (1, 6):
 
     async def get_msg_ref(
         messageable: Messageable, emoji: str, *, smileysend_force_new_ref: bool = False

@@ -4,7 +4,7 @@
     "description": "Have you ever wanted your bot to vomit embeds any occassion they get? With this cog you can! It shines with its one and only command `[p]embedvomit` making your bot send embeds in every message.",
     "install_msg": "Thanks for installing EmbedVomit. Let's turn your boring messages into messages full of ~~love~~ lovely embeds!",
     "author": [
-        "Jakub Kuczys (Jackenmen#6607)"
+        "Jakub Kuczys (https://github.com/Jackenmen)"
     ],
     "required_cogs": {},
     "requirements": [],

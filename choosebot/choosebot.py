@@ -14,7 +14,11 @@ class ChooseBot(commands.Cog):
         if ctx.command is self.choosebot:
             return True
 
-        instance_name = data_manager.instance_name
+        instance_name = (
+            data_manager.instance_name()
+            if callable(data_manager.instance_name)
+            else data_manager.instance_name
+        )
         assert isinstance(instance_name, str)
         if self.chosen_bot == instance_name:
             return True

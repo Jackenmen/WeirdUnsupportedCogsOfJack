@@ -4,7 +4,7 @@
     "description": "Have you seen square dick? Think that but with text and done on every message sent by the bot!",
     "install_msg": "Thanks for installing PillowSend. Enjoy the square dick power with all text messages turning into images generated with pillow!",
     "author": [
-        "jack1142 (Jackenmen#6607)"
+        "Jakub Kuczys (https://github.com/Jackenmen)"
     ],
     "required_cogs": {},
     "requirements": ["pillow~=8.1"],

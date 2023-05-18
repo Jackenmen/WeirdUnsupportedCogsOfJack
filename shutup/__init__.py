@@ -4,4 +4,4 @@ from .shutup import ShutUp
 
 
 async def setup(bot: Red) -> None:
-    bot.add_cog(ShutUp(bot))
+    await bot.add_cog(ShutUp(bot))

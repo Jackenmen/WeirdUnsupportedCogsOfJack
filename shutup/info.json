@@ -4,12 +4,12 @@
     "description": "Have you ever wanted your bot to just shut up? With this cog you can! It features with two commands: `[p]shutup` and `[p]unshutup` to make your bot stop from sending messages and let it send them again if you so wish!",
     "install_msg": "Thanks for installing ShutUp. If you were already crazy enough to add this repo, I can just wish you great fun!",
     "author": [
-        "jack1142 (Jackenmen#6607)"
+        "Jakub Kuczys (https://github.com/Jackenmen)"
     ],
     "required_cogs": {},
     "requirements": [],
     "tags": [],
-    "min_bot_version": "3.3.1",
+    "min_bot_version": "3.5.2",
     "hidden": false,
     "disabled": false,
     "type": "COG"

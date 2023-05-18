@@ -1,57 +1,32 @@
 from typing import Any, Dict
 
 import discord
-from redbot.core import commands
+from redbot.core import app_commands, commands
 from redbot.core.bot import Red
 
-API_URL = "https://discord.com/api/v8"
+channels: Dict[int, int] = {}
 
 
 class SmileySlash(commands.Cog):
-    def __init__(self, bot: Red) -> None:
-        self.bot = bot
-        self.channels: Dict[int, int] = {}
-
-    async def initialize(self) -> None:
-        setattr(
-            self.bot._connection,
-            "parse_interaction_create",
-            self.parse_interaction_create,
-        )
-        self.bot._connection.parsers[
-            "INTERACTION_CREATE"
-        ] = self.parse_interaction_create
-
-    def cog_unload(self) -> None:
-        delattr(self.bot._connection, "parse_interaction_create")
-        self.bot._connection.parsers.pop("INTERACTION_CREATE", None)
-
-    def parse_interaction_create(self, data: Dict[str, Any]) -> None:
-        self.bot.dispatch("interaction_create", data)
-
-    @commands.Cog.listener()
-    async def on_interaction_create(self, data: Dict[str, Any]) -> None:
-        channel_id = int(data["channel_id"])
-        combo = self.channels.setdefault(channel_id, 1)
-        self.channels[channel_id] = combo + 1
-        async with self.bot.http._HTTPClient__session.post(
-            f"{API_URL}/interactions/{data['id']}/{data['token']}/callback",
-            json={
-                "type": 4,
-                "data": {
-                    "content": "😃" * combo,
-                },
-            },
-        ):
-            pass
-
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
         if message.webhook_id is None:
-            self.channels.pop(message.channel.id, None)
+            channels.pop(message.channel.id, None)
+
+
+@app_commands.command(description="😃" * 100)
+async def smile(interaction: discord.Interaction, member: discord.Member) -> None:
+    del member
+    combo = channels.setdefault(interaction.channel_id, 1)
+    channels[interaction.channel_id] = combo + 1
+    await interaction.response.send_message("😃" * combo)
 
 
 async def setup(bot: Red) -> None:
     cog = SmileySlash(bot)
-    bot.add_cog(cog)
-    await cog.initialize()
+    bot.tree.add_command(smile)
+    await bot.add_cog(cog)
+
+
+async def teardown(bot: Red) -> None:
+    bot.tree.remove_command("smile")

@@ -71,6 +71,48 @@ async def process_args(
     return ret_content, files
 
 
+if discord.version_info[0] >= 2:
+
+    @functools.wraps(real_send)
+    async def send(
+        self,
+        content=None,
+        *,
+        tts=False,
+        embed=None,
+        embeds=None,
+        file=None,
+        files=None,
+        stickers=None,
+        delete_after=None,
+        nonce=None,
+        allowed_mentions=None,
+        reference=None,
+        mention_author=None,
+        view=None,
+        suppress_embeds=None,
+        silent=None,
+    ):
+        content, files = await process_args(self, content, file, files)
+        return await real_send(
+            self,
+            content,
+            tts=tts,
+            embed=embed,
+            embeds=embeds,
+            files=files,
+            stickers=stickers,
+            delete_after=delete_after,
+            nonce=nonce,
+            allowed_mentions=allowed_mentions,
+            reference=reference,
+            mention_author=mention_author,
+            view=view,
+            suppress_embeds=suppress_embeds,
+            silent=silent,
+        )
+
+
 if discord.version_info[:2] >= (1, 6):
 
     @functools.wraps(real_send)

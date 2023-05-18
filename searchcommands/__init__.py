@@ -1,8 +1,12 @@
+import inspect
+
 from redbot.core.bot import Red
 
 from .searchcommands import SearchCommands
 
 
-def setup(bot: Red) -> None:
+async def setup(bot: Red) -> None:
     cog = SearchCommands(bot)
-    bot.add_cog(cog)
+    maybe_coro = bot.add_cog(cog)
+    if inspect.isawaitable(maybe_coro):
+        await maybe_coro

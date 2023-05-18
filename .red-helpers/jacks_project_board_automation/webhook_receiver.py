@@ -93,7 +93,7 @@ def main() -> int:
     pr_number = (payload.get("pull_request") or payload.get("issue"))["number"]
     action = payload["action"]
 
-    if payload["sender"]["login"] == "jack1142":
+    if payload["sender"]["login"].lower() == "jackenmen":
         print("Ignoring my own actions.")
         return 0
 

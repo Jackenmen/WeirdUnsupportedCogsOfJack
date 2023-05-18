@@ -6,7 +6,7 @@ import discord
 import fuzzywuzzy.process
 from redbot.core import commands
 from redbot.core.bot import Red
-from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
+from redbot.core.utils.menus import menu
 
 
 class SearchCommands(commands.Cog):
@@ -68,4 +68,4 @@ class SearchCommands(commands.Cog):
                         f"```"
                     )
                 pages.append(page)
-        await menu(ctx, pages, DEFAULT_CONTROLS)
+        await menu(ctx, pages)

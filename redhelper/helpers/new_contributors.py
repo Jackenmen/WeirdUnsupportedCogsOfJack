@@ -133,6 +133,8 @@ def is_org_member():
         role = guild.get_role(ORG_MEMBER_ROLE_ID)
         if role is None:
             return False
+        if hasattr(author, "get_role"):
+            return author.get_role(role.id) is not None
         return role in author.roles
 
     return commands.check(predicate)

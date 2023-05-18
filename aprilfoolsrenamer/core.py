@@ -187,7 +187,7 @@ class AprilFoolsRenamer(commands.Cog):
         tmpl = Template(nick_template)
         idx = (
             sorted(
-                member.guild.members, key=lambda m: m.joined_at or datetime.utcnow()
+                member.guild.members, key=lambda m: m.joined_at or datetime.now()
             ).index(member)
             + 1
         )
