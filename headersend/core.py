@@ -30,8 +30,7 @@ async def send(
                     current_page_length = 0
                     pages.append("\n".join(lines))
                     lines.clear()
-                else:
-                    current_page_length += len(new_line) + 1
+                current_page_length += len(new_line) + 1
                 lines.append(new_line)
         if lines:
             pages.append("\n".join(lines))
