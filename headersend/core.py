@@ -26,9 +26,12 @@ async def send(
         for line in content.splitlines():
             for longest_line in pagify(line, [" "], shorten_by=2):
                 new_line = f"# {longest_line}"
-                if current_page_length + len(new_line) > 2000:
+                if current_page_length + len(new_line) > 2001:
+                    current_page_length = 0
                     pages.append("\n".join(lines))
                     lines.clear()
+                else:
+                    current_page_length += len(new_line) + 1
                 lines.append(new_line)
         if lines:
             pages.append("\n".join(lines))
