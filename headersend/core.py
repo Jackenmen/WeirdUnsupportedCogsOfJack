@@ -64,7 +64,7 @@ async def send(
                     lines.clear()
                 current_page_length += len(new_line) + 1
                 lines.append(new_line)
-                break
+                continue
 
             for line in part.content.splitlines():
                 pagifier = pagify(line, [" "], shorten_by=0)
