@@ -18,9 +18,9 @@ else:
     from redbot.core.commands import Literal
 
 
-CODE_BLOCK_RE = re.compile(r"```[\w.+\-]+(?!```).*?```|```\n*.+?```")
+CODE_BLOCK_RE = re.compile(r"```[\w.+\-]+(?!```).*?```|```\n*.+?```", re.DOTALL)
 real_send = Messageable.send
-SKIP_CODE_BLOCKS = False
+SKIP_CODE_BLOCKS = True
 HEADER_SIZE: Optional[int] = 1
 
 
