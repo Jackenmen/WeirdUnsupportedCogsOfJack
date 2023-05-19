@@ -81,7 +81,7 @@ class HeaderSend(commands.Cog):
         setattr(Messageable, "send", real_send)
 
     @commands.is_owner()
-    @commands.command()
+    @commands.group(invoke_without_command=True)
     async def headersend(self, ctx: commands.Context, toggle: bool) -> None:
         if toggle:
             setattr(Messageable, "send", send)
