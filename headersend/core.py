@@ -46,7 +46,10 @@ async def send(
                 end = match.start()
                 if end != start:
                     content_parts.append(ContentPart(content[start:end]))
-                content_parts.append(ContentPart(match.group(0), can_split=False))
+                if content_parts and not content_parts[-1].can_split:
+                    content_parts[-1].content += match.group(0)
+                else:
+                    content_parts.append(ContentPart(match.group(0), can_split=False))
                 start = match.end()
             if start != len(content):
                 content_parts.append(ContentPart(content[start:]))
