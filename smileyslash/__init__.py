@@ -23,7 +23,7 @@ async def smile(interaction: discord.Interaction, member: discord.Member) -> Non
 
 
 async def setup(bot: Red) -> None:
-    cog = SmileySlash(bot)
+    cog = SmileySlash()
     bot.tree.add_command(smile)
     await bot.add_cog(cog)
 
