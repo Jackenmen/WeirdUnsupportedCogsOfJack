@@ -192,10 +192,13 @@ class ConstantRandomPings(commands.Cog):
                 if isinstance(channel_or_thread, discord.Thread)
                 else channel_or_thread
             )
-            members = [m for m in guild.members if channel.permissions_for(channel)]
+            me = guild.me
+            members = [
+                m for m in guild.members if channel.permissions_for(me).send_messages
+            ]
             member_to_ping = random.choice(members)
             try:
-                if not channel_or_thread.permissions_for(guild.me).send_messages:
+                if not channel_or_thread.permissions_for(me).send_messages:
                     raise RuntimeError
                 await channel_or_thread.send(member_to_ping.mention)
             except (discord.Forbidden, RuntimeError):
