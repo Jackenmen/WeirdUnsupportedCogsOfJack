@@ -65,11 +65,18 @@ class ConstantRandomPings(commands.Cog):
         if self.handle is not None:
             self.handle.cancel()
 
+    async def _ensure_config_for_guild(self, guild: discord.Guild) -> None:
+        if guild.id in self.guilds:
+            return
+        self.guilds[guild.id] = await self.config.guild(guild).all()
+
     async def set_guild_enabled(self, guild: discord.Guild, value: bool) -> None:
+        await self._ensure_config_for_guild(guild)
         self.guilds[guild.id]["enabled"] = value
         await self.config.guild(guild).enabled.set(value)
 
     async def set_guild_interval(self, guild: discord.Guild, value: float) -> None:
+        await self._ensure_config_for_guild(guild)
         self.guilds[guild.id]["interval"] = value
         await self.config.guild(guild).interval.set(value)
 
@@ -78,6 +85,7 @@ class ConstantRandomPings(commands.Cog):
         guild: discord.Guild,
         channel_or_thread: Optional[MessageableGuildChannelOrThread],
     ) -> None:
+        await self._ensure_config_for_guild(guild)
         value = channel_or_thread and channel_or_thread.id
         self.guilds[guild.id]["channel"] = value
         await self.config.guild(guild).channel.set(value)
