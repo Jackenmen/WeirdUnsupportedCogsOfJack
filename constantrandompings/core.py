@@ -173,7 +173,11 @@ class ConstantRandomPings(commands.Cog):
                 continue
 
             # we can ping new users into the thread
-            channel = channel_or_thread.parent if isinstance(channel, discord.Thread) else channel_or_thread
+            channel = (
+                channel_or_thread.parent
+                if isinstance(channel_or_thread, discord.Thread)
+                else channel_or_thread
+            )
             members = [m for m in guild.members if channel.permissions_for(channel)]
             member_to_ping = random.choice(members)
             try:
