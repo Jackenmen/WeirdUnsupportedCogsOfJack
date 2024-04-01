@@ -1,0 +1,16 @@
+{
+    "name": "ConstantRandomPings",
+    "short": "Wanna annoy people during April Fools? Ping them at random at set interval!",
+    "description": "Constant random pings sound horrible... Please don't do this...",
+    "install_msg": "You're a bad person for installing ConstantRandomPings. Seriously. Why do you have to be so annoying!?",
+    "author": [
+        "Jakub Kuczys (https://github.com/Jackenmen)"
+    ],
+    "required_cogs": {},
+    "requirements": [],
+    "tags": [],
+    "min_bot_version": "3.5.0",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG"
+}
