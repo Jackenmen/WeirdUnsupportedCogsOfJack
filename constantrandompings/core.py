@@ -119,7 +119,21 @@ class ConstantRandomPings(commands.Cog):
         self.schedule_ping_people_task()
 
     def schedule_ping_people_task(self) -> None:
+        def _done_callback(task: asyncio.Task) -> None:
+            try:
+                exc = task.exception()
+            except asyncio.CancelledError:
+                pass
+            else:
+                if exc is None:
+                    return
+                log.error(
+                    "An unexpected error occurred in ping people task.",
+                    exc_info=exc,
+                )
+
         self.task = asyncio.create_task(self.ping_people())
+        self.task.add_done_callback(_done_callback)
 
     async def ping_people(self) -> None:
         log.debug("Starting ping people task...")
