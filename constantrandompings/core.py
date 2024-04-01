@@ -172,7 +172,10 @@ class ConstantRandomPings(commands.Cog):
                 )
                 continue
 
-            member_to_ping = random.choice(guild.members)
+            # we can ping new users into the thread
+            channel = channel_or_thread.parent if isinstance(channel, discord.Thread) else channel_or_thread
+            members = [m for m in guild.members if channel.permissions_for(channel)]
+            member_to_ping = random.choice(members)
             try:
                 if not channel_or_thread.permissions_for(guild.me).send_messages:
                     raise RuntimeError
