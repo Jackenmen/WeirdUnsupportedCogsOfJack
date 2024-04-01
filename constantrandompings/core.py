@@ -104,6 +104,8 @@ class ConstantRandomPings(commands.Cog):
         await self.config.guild(guild).channel.set(value)
 
     async def reschedule_ping_people_task(self) -> None:
+        if not self._schedule_next:
+            return
         log.info("Settings changed, rescheduling task...")
         if self.task is not None:
             # task is currently running, disable scheduling and wait
