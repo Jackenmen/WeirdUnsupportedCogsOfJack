@@ -148,7 +148,7 @@ class ConstantRandomPings(commands.Cog):
     async def constantrandompings(self, ctx: commands.Context) -> None:
         """Setup constant random pings."""
 
-    @constantrandompings.command(name="channel")
+    @constantrandompings.command(name="enabled")
     async def constantrandompings_enabled(
         self, ctx: commands.GuildContext, *, value: bool
     ):
@@ -156,7 +156,7 @@ class ConstantRandomPings(commands.Cog):
         await self.set_guild_enabled(ctx.guild, value)
         await ctx.send("Value updated.")
 
-    @constantrandompings.command(name="channel")
+    @constantrandompings.command(name="interval")
     async def constantrandompings_interval(
         self, ctx: commands.GuildContext, *, interval: ValidInterval
     ):
