@@ -122,6 +122,7 @@ class ConstantRandomPings(commands.Cog):
 
     def schedule_ping_people_task(self) -> None:
         def _done_callback(task: asyncio.Task) -> None:
+            self.task = None
             try:
                 exc = task.exception()
             except asyncio.CancelledError:
