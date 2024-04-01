@@ -135,7 +135,7 @@ class ConstantRandomPings(commands.Cog):
             if channel_id is None:
                 continue
 
-            last_ping = self.last_ping.get(guild_id, current_time)
+            last_ping = self.last_ping.setdefault(guild_id, current_time)
             next_ping = last_ping + guild_config["interval"]
             if next_ping > current_time:
                 # interval didn't pass
