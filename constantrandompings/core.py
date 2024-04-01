@@ -104,8 +104,12 @@ class ConstantRandomPings(commands.Cog):
         await self.config.guild(guild).channel.set(value)
 
     async def reschedule_ping_people_task(self) -> None:
+        log.info("Settings changed, rescheduling task...")
         if self.task is not None:
             # task is currently running, disable scheduling and wait
+            log.info(
+                "Task is already running, waiting for reschedule until it finishes."
+            )
             self._schedule_next = False
             await self.task
             self._schedule_next = True
@@ -118,6 +122,7 @@ class ConstantRandomPings(commands.Cog):
         self.task = asyncio.create_task(self.ping_people())
 
     async def ping_people(self) -> None:
+        log.debug("Starting ping people task...")
         self.handle = None
         guilds_to_remove: List[int] = []
 
@@ -135,21 +140,36 @@ class ConstantRandomPings(commands.Cog):
             if next_ping > current_time:
                 # interval didn't pass
                 new_task_start = min(next_ping, new_task_start)
+                log.debug(
+                    "Interval for guild with ID %s did not pass yet, skipping...",
+                    guild_id,
+                )
                 continue
 
             guild = self.bot.get_guild(guild_id)
             if guild is None:
                 # assume guild is unavailable but don't permanently remove its config
                 guilds_to_remove.append(guild_id)
+                log.warning(
+                    "Could not find guild with ID %s, ignoring until cog reload...",
+                    guild_id,
+                )
                 continue
 
             if guild.unavailable:
+                log.warning("Guild with ID %s is unavailable, skipping...", guild_id)
                 continue
 
             channel_or_thread = guild.get_channel_or_thread(channel_id)
             if channel_or_thread is None:
                 # the channel no longer exists, unset in config
                 await self.set_guild_channel(guild, None)
+                log.warning(
+                    "Channel or thread with ID %s no longer exists,"
+                    " unsetting the value in configuration of guild with ID %s.",
+                    channel_id,
+                    guild_id,
+                )
                 continue
 
             member_to_ping = random.choice(guild.members)
@@ -160,22 +180,37 @@ class ConstantRandomPings(commands.Cog):
             except (discord.Forbidden, RuntimeError):
                 # missing send permissions, disable without unsetting the channel
                 await self.set_guild_enabled(guild, False)
+                log.warning(
+                    "Missing send permissions in channel or thread with ID %s,"
+                    " disabled constant random pings for guild with ID %s.",
+                    channel_id,
+                    guild_id,
+                )
                 continue
-            except discord.HTTPException:
+            except discord.HTTPException as exc:
                 # unexpected HTTP exception, ignore...
-                pass
+                log.warning(
+                    "Could not send message in channel or thread with ID %s"
+                    " (from guild with ID %s) due to HTTP exception.",
+                    channel_id,
+                    guild_id,
+                    exc_info=exc,
+                )
 
-            self.last_ping[guild_id] = last_ping
+            last_ping = self.last_ping[guild_id] = time.time()
             next_ping = last_ping + guild_config["interval"]
             new_task_start = min(next_ping, new_task_start)
 
         for guild_id in guilds_to_remove:
             del self.guilds[guild_id]
 
+        log.debug("Ping people task finished.")
         if not self._schedule_next or new_task_start is math.inf:
+            log.info("No guild requires scheduling a new task, returning...")
             # nothing needs to happen in the future
             return
-        delta = max(new_task_start - time.time(), 0.0)
+        delta = max(new_task_start - time.time(), 0.0) + 5.0
+        log.info("Next task will be started in %s seconds.", delta)
         self.loop.call_later(delta, self.schedule_ping_people_task)
 
     @commands.guildowner()
