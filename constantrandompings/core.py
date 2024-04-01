@@ -51,20 +51,26 @@ class ConstantRandomPings(commands.Cog):
         self.guilds: Dict[int, GuildConfig] = {}
         self.last_ping: Dict[int, float] = {}
         self.loop = asyncio.get_running_loop()
-        self.handle = None
+        self.task: Optional[asyncio.Task] = None
+        self.handle: Optional[asyncio.TimerHandle] = None
+        self._schedule_next = True
 
     async def initialize(self) -> None:
         self.guilds = await self.config.all_guilds()
 
-        async def first_ping_people() -> None:
+        async def schedule_after_ready() -> None:
             await self.bot.wait_until_ready()
-            await self.ping_people()
+            self.schedule_ping_people_task()
 
-        asyncio.create_task(first_ping_people())
+        asyncio.create_task(schedule_after_ready())
 
     async def cog_unload(self) -> None:
+        if self.task is not None:
+            self.task.cancel()
+            self.task = None
         if self.handle is not None:
             self.handle.cancel()
+            self.handle = None
 
     async def _ensure_config_for_guild(self, guild: discord.Guild) -> None:
         if guild.id in self.guilds:
@@ -97,10 +103,22 @@ class ConstantRandomPings(commands.Cog):
         self.guilds[guild.id]["channel"] = value
         await self.config.guild(guild).channel.set(value)
 
+    async def reschedule_ping_people_task(self) -> None:
+        if self.task is not None:
+            # task is currently running, disable scheduling and wait
+            self._schedule_next = False
+            await self.task
+            self._schedule_next = True
+
+        if self.handle is not None:
+            self.handle.cancel()
+        self.schedule_ping_people_task()
+
     def schedule_ping_people_task(self) -> None:
-        asyncio.create_task(self.ping_people())
+        self.task = asyncio.create_task(self.ping_people())
 
     async def ping_people(self) -> None:
+        self.handle = None
         guilds_to_remove: List[int] = []
 
         current_time = time.time()
@@ -154,6 +172,9 @@ class ConstantRandomPings(commands.Cog):
         for guild_id in guilds_to_remove:
             del self.guilds[guild_id]
 
+        if not self._schedule_next or new_task_start is math.inf:
+            # nothing needs to happen in the future
+            return
         delta = max(new_task_start - time.time(), 0.0)
         self.loop.call_later(delta, self.schedule_ping_people_task)
 
@@ -186,12 +207,14 @@ class ConstantRandomPings(commands.Cog):
         """Enable constant random pings for the server."""
         await self.set_guild_enabled(ctx.guild, True)
         await ctx.send("Constant random pings enabled.")
+        await self.reschedule_ping_people_task()
 
     @constantrandompings.command(name="disable")
     async def constantrandompings_disable(self, ctx: commands.GuildContext) -> None:
         """Disable constant random pings for the server."""
         await self.set_guild_enabled(ctx.guild, False)
         await ctx.send("Constant random pings disabled.")
+        await self.reschedule_ping_people_task()
 
     @constantrandompings.command(name="interval")
     async def constantrandompings_interval(
@@ -200,6 +223,7 @@ class ConstantRandomPings(commands.Cog):
         """Set ping interval (in minutes) for the server."""
         await self.set_guild_interval(ctx.guild, interval.total_seconds())
         await ctx.send("Value updated.")
+        await self.reschedule_ping_people_task()
 
     @constantrandompings.command(name="channel")
     async def constantrandompings_channel(
@@ -219,3 +243,4 @@ class ConstantRandomPings(commands.Cog):
             return
         await self.set_guild_channel(ctx.guild, channel_or_thread)
         await ctx.send("Value updated.")
+        await self.reschedule_ping_people_task()
