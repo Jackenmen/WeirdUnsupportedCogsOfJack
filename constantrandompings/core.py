@@ -10,6 +10,7 @@ import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
+from redbot.core.utils.chat_formatting import humanize_timedelta
 
 
 MessageableGuildChannelOrThread = Union[
@@ -69,6 +70,12 @@ class ConstantRandomPings(commands.Cog):
         if guild.id in self.guilds:
             return
         self.guilds[guild.id] = await self.config.guild(guild).all()
+
+    async def get_guild_config(self, guild: discord.Guild) -> GuildConfig:
+        guild_config = self.guilds.get(guild.id)
+        if guild_config is not None:
+            return guild_config
+        return await self.config.guild(guild).all()
 
     async def set_guild_enabled(self, guild: discord.Guild, value: bool) -> None:
         await self._ensure_config_for_guild(guild)
@@ -155,6 +162,26 @@ class ConstantRandomPings(commands.Cog):
     @commands.group()
     async def constantrandompings(self, ctx: commands.Context) -> None:
         """Setup constant random pings."""
+
+    @constantrandompings.command(name="settings", aliases=["showsettings"])
+    async def constantrandompings_settings(self, ctx: commands.GuildContext) -> None:
+        """Show settings for the server."""
+        guild_config = await self.get_guild_config(ctx.guild)
+        status = "Enabled" if guild_config["enabled"] else "Disabled"
+        channel_or_thread = ctx.guild.get_channel_or_thread(guild_config["channel"])
+        channel_mention = (
+            channel_or_thread and channel_or_thread.mention
+            or f"Unknown {guild_config['channel']}"
+        )
+        interval = humanize_timedelta(
+            datetime.timedelta(seconds=guild_config["interval"])
+        )
+        await ctx.send(
+            f"**Settings**\n\n"
+            f"Status: {status}\n"
+            f"Channel: {channel_mention}\n"
+            f"Interval: {interval}"
+        )
 
     @constantrandompings.command(name="enable")
     async def constantrandompings_enable(self, ctx: commands.GuildContext) -> None:
