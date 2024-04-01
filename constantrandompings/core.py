@@ -156,18 +156,22 @@ class ConstantRandomPings(commands.Cog):
     async def constantrandompings(self, ctx: commands.Context) -> None:
         """Setup constant random pings."""
 
-    @constantrandompings.command(name="enabled")
-    async def constantrandompings_enabled(
-        self, ctx: commands.GuildContext, *, value: bool
-    ):
-        """Enable/disable constant random pings for the server."""
-        await self.set_guild_enabled(ctx.guild, value)
-        await ctx.send("Value updated.")
+    @constantrandompings.command(name="enable")
+    async def constantrandompings_enable(self, ctx: commands.GuildContext) -> None:
+        """Enable constant random pings for the server."""
+        await self.set_guild_enabled(ctx.guild, True)
+        await ctx.send("Constant random pings enabled.")
+
+    @constantrandompings.command(name="disable")
+    async def constantrandompings_disable(self, ctx: commands.GuildContext) -> None:
+        """Disable constant random pings for the server."""
+        await self.set_guild_enabled(ctx.guild, False)
+        await ctx.send("Constant random pings disabled.")
 
     @constantrandompings.command(name="interval")
     async def constantrandompings_interval(
         self, ctx: commands.GuildContext, *, interval: ValidInterval
-    ):
+    ) -> None:
         """Set ping interval (in minutes) for the server."""
         await self.set_guild_interval(ctx.guild, interval.total_seconds())
         await ctx.send("Value updated.")
@@ -178,7 +182,7 @@ class ConstantRandomPings(commands.Cog):
         ctx: commands.GuildContext,
         *,
         channel_or_thread: MessageableGuildChannelOrThread,
-    ):
+    ) -> None:
         """
         Set channel or thread where random pings should be sent.
 
