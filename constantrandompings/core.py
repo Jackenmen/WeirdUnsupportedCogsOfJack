@@ -173,9 +173,7 @@ class ConstantRandomPings(commands.Cog):
             channel_or_thread and channel_or_thread.mention
             or f"Unknown {guild_config['channel']}"
         )
-        interval = humanize_timedelta(
-            datetime.timedelta(seconds=guild_config["interval"])
-        )
+        interval = humanize_timedelta(seconds=guild_config["interval"])
         await ctx.send(
             f"**Settings**\n\n"
             f"Status: {status}\n"
