@@ -15,8 +15,7 @@ class SmileySlash(commands.Cog):
 
 
 @app_commands.command(description="😃" * 100)
-async def smile(interaction: discord.Interaction, member: discord.Member) -> None:
-    del member
+async def smile(interaction: discord.Interaction) -> None:
     combo = channels.setdefault(interaction.channel_id, 1)
     channels[interaction.channel_id] = combo + 1
     await interaction.response.send_message("😃" * combo)
