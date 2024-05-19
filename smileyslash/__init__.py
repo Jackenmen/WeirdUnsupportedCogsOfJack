@@ -11,13 +11,17 @@ class SmileySlash(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
         if message.webhook_id is None:
-            channels.pop(message.channel.id, None)
+            combo = channels.get(message.channel.id, 0) + 1
+            if not message.author.bot and message.content == "😃" * combo:
+                channels[message.channel.id] = combo
+            else:
+                channels.pop(message.channel.id, None)
 
 
 @app_commands.command(description="😃" * 100)
 async def smile(interaction: discord.Interaction) -> None:
-    combo = channels.setdefault(interaction.channel_id, 1)
-    channels[interaction.channel_id] = combo + 1
+    channels.setdefault(interaction.channel_id, 1)
+    channels[interaction.channel_id] += 1
     await interaction.response.send_message("😃" * combo)
 
 
