@@ -7,11 +7,12 @@ from typing import List, Iterable
 
 import discord
 from discord.abc import Messageable
+from discord.ext import commands as dpy_commands
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.commands import Context
 from redbot.core.config import Config
-from redbot.core.utils.chat_formatting import box
+from redbot.core.utils.chat_formatting import box, text_to_file
 from redbot.core.utils.predicates import MessagePredicate
 
 
@@ -27,7 +28,7 @@ CONFIG_CACHE = {}
 REPLIES_ENABLED = False
 
 real_send = Messageable.send
-real_send_interactive = Context.send_interactive
+real_send_interactive = Red.send_interactive
 OMEGA = ["\N{SMILING FACE WITH OPEN MOUTH}"] * 7 + [
     "\N{SMILING CAT FACE WITH OPEN MOUTH}"
 ]
@@ -43,13 +44,19 @@ SPECIAL_AUTHOR_CASES = {
     332980470650372096: ["\N{TOILET}"],
     172416764896870401: ["\N{SPIRAL NOTE PAD}\N{VARIATION SELECTOR-16}"],
 }
+FILE_LIST = [
+    "\N{FLOPPY DISK}",
+    "file",
+    "flie",
+    "fly",
+]
 MORE_LIST = [
     "\N{SMILING FACE WITH OPEN MOUTH}",
     "\N{SMILING CAT FACE WITH OPEN MOUTH}",
     "more",
     "moar",
 ]
-FULL_MORE_LIST = MORE_LIST + [
+FULL_MORE_FILE_LIST = FILE_LIST + MORE_LIST + [
     emoji for emojis in SPECIAL_AUTHOR_CASES.values() for emoji in emojis
 ]
 
@@ -345,51 +352,89 @@ else:
 
 @functools.wraps(real_send_interactive)
 async def send_interactive(
-    self, messages: Iterable[str], box_lang: str = None, timeout: int = 15
+    self,
+    channel: discord.abc.Messageable,
+    messages: Iterable[str],
+    *,
+    user: Optional[discord.User] = None,
+    box_lang: Optional[str] = None,
+    timeout: int = 60,
+    join_character: str = "",
 ) -> List[discord.Message]:
-    """Send multiple messages interactively.
+    """
+    Send multiple messages interactively.
+
     The user will be prompted for whether or not they would like to view
     the next message, one at a time. They will also be notified of how
     many messages are remaining on each prompt.
+
     Parameters
     ----------
+    channel : discord.abc.Messageable
+        The channel to send the messages to.
     messages : `iterable` of `str`
         The messages to send.
-    box_lang : str
-        If specified, each message will be contained within a codeblock of
+    user : discord.User
+        The user that can respond to the prompt.
+        When this is ``None``, any user can respond.
+    box_lang : Optional[str]
+        If specified, each message will be contained within a code block of
         this language.
     timeout : int
         How long the user has to respond to the prompt before it times out.
         After timing out, the bot deletes its prompt message.
+    join_character : str
+        The character used to join all the messages when the file output
+        is selected.
+
+    Returns
+    -------
+    List[discord.Message]
+        A list of sent messages.
     """
     messages = tuple(messages)
     ret = []
+    # using dpy_commands.Context to keep the Messageable contract in full
+    if isinstance(channel, dpy_commands.Context):
+        # this is only necessary to ensure that `channel.delete_messages()` works
+        # when `ctx.channel` has that method
+        channel = channel.channel
 
     for idx, page in enumerate(messages, 1):
         if box_lang is None:
-            msg = await self.send(page)
+            msg = await channel.send(page)
         else:
-            msg = await self.send(box(page, lang=box_lang))
+            msg = await channel.send(box(page, lang=box_lang))
         ret.append(msg)
         n_remaining = len(messages) - idx
         if n_remaining > 0:
             if n_remaining == 1:
-                plural = ""
-                is_are = "is"
+                prompt_text = (
+                    "There is still one message remaining. Type {command_1} to continue"
+                    " or {command_2} to upload all contents as a file."
+                )
             else:
-                plural = "s"
-                is_are = "are"
+                prompt_text = (
+                    "There are still {count} messages remaining."
+                    " Type {command_1} to continue"
+                    " or {command_2} to upload all contents as a file."
+                )
 
-            omega = SPECIAL_AUTHOR_CASES.get(self.author.id, OMEGA)
-            query = await self.send(
-                "There {} still {} message{} remaining. "
-                f"Type {random.choice(omega)} to continue."
-                "".format(is_are, n_remaining, plural)
+            omega = SPECIAL_AUTHOR_CASES.get(user and user.id, OMEGA)
+            query = await channel.send(
+                prompt_text.format(
+                    count=n_remaining,
+                    command_1=random.choice(omega),
+                    command_2="\N{FLOPPY DISK}",
+                )
+            )
+            pred = MessagePredicate.lower_contained_in(
+                FULL_MORE_FILE_LIST, channel=channel, user=user
             )
             try:
-                resp = await self.bot.wait_for(
+                resp = await self.wait_for(
                     "message",
-                    check=MessagePredicate.lower_contained_in(FULL_MORE_LIST, self),
+                    check=pred,
                     timeout=timeout,
                 )
             except asyncio.TimeoutError:
@@ -398,13 +443,19 @@ async def send_interactive(
                 break
             else:
                 try:
-                    await self.channel.delete_messages((query, resp))
+                    await channel.delete_messages((query, resp))
                 except (discord.HTTPException, AttributeError):
                     # In case the bot can't delete other users' messages,
                     # or is not a bot account
                     # or channel is a DM
                     with contextlib.suppress(discord.HTTPException):
                         await query.delete()
+                if pred.result < len(FILE_LIST):
+                    ret.append(
+                        await channel.send(
+                            file=text_to_file(join_character.join(messages))
+                        )
+                    )
     return ret
 
 
@@ -417,7 +468,7 @@ class SmileySend(commands.Cog):
         if settings["toggle"]:
             setattr(Messageable, "send", send)
         if settings["toggle_interactive"]:
-            setattr(Context, "send_interactive", send_interactive)
+            setattr(Red, "send_interactive", send_interactive)
         global CONFIG_CACHE
         CONFIG_CACHE = await CONFIG.custom(MSG_IDS).all()
         global REPLIES_ENABLED
@@ -425,7 +476,7 @@ class SmileySend(commands.Cog):
 
     def cog_unload(self) -> None:
         setattr(Messageable, "send", real_send)
-        setattr(Context, "send_interactive", real_send_interactive)
+        setattr(Red, "send_interactive", real_send_interactive)
 
     @commands.is_owner()
     @commands.group(invoke_without_command=True)
@@ -440,9 +491,9 @@ class SmileySend(commands.Cog):
     @smileysend.command(name="interactive")
     async def smileysend_interactive(self, ctx: commands.Context, toggle: bool) -> None:
         if toggle:
-            setattr(Context, "send_interactive", send_interactive)
+            setattr(Red, "send_interactive", send_interactive)
         else:
-            setattr(Context, "send_interactive", real_send_interactive)
+            setattr(Red, "send_interactive", real_send_interactive)
         await CONFIG.toggle_interactive.set(toggle)
         await ctx.tick()
 
