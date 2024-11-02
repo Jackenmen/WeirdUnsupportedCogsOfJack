@@ -456,6 +456,7 @@ async def send_interactive(
                             file=text_to_file(join_character.join(messages))
                         )
                     )
+                    break
     return ret
 
 
