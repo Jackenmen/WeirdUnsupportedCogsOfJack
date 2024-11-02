@@ -3,7 +3,7 @@ import contextlib
 import functools
 import itertools
 import random
-from typing import List, Iterable
+from typing import List, Iterable, Optional
 
 import discord
 from discord.abc import Messageable
